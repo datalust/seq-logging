@@ -5,7 +5,8 @@
   "keywords": ["seq", "logging"],
   "main": "seq_logger.js",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha"
+    "test": "node ./node_modules/mocha/bin/mocha",
+    "start": "node ./example/example.js"
   },
   "author": "Continous IT and contributors",
   "license": "Apache-2.0",
