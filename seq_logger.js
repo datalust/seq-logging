@@ -12,6 +12,11 @@ const LEVELS = {
     "Fatal": "Fatal"
 };
 
+const HEADER = "{Events:[";
+const FOOTER = "]}";
+const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLength(FOOTER, 'utf8');
+
+
 class SeqLogger {
     constructor(config) {
         let dflt = {
@@ -66,8 +71,10 @@ class SeqLogger {
             return;
         }
         let norm = this._normalize(event);
-        this._queue.push({at: new Date(), event: norm});
-        this._setTimer();
+        this._queue.push(event);
+        if (!this._activeShipper) {
+            this._setTimer();
+        }
     }
 
     _setTimer() {
@@ -76,6 +83,7 @@ class SeqLogger {
         }
         
         this._timer = setTimeout(() => {
+            this._timer = null;
             this._onTimer();
         }, this._maxBatchingTime);
     }
@@ -88,8 +96,7 @@ class SeqLogger {
     }
 
     _onTimer() {
-        this._timer = null;
-        this._ship({flush: false});
+        this._ship();
     }
 
     _normalize(event) {
@@ -122,16 +129,16 @@ class SeqLogger {
         }
     }
     
-    _ship(opts) {
+    _ship() {
         if (this._queue.lenth === 0) {
             return Promise.resolve(false);
         }
         
-        var wait = this._activeShipper || Promise.resolve(false);
-        this._activeShipper = wait
+        let wait = this._activeShipper || Promise.resolve(false);
+        let shipper = this._activeShipper = wait
             .then(() => {
                 let more = a => {
-                    if (!a || !opts.flush) {
+                    if (!a) {
                         return a;
                     }
                     return this._sendBatch().then(b => more(b));
@@ -143,22 +150,20 @@ class SeqLogger {
                 this._reset();
             });
 
-        return this._activeShipper;
+        return shipper;
     }
     
     _sendBatch() {
         if (this._queue.length === 0) {
             return Promise.resolve(false);
         }
-        const header = "{Events:[";
-        const footer = "]}";
-        var bytes = Buffer.byteLength(header, 'utf8') + Buffer.byteLength(footer, 'utf8');
+        var bytes = HEADER_FOOTER_BYTES;
         let batch = [];
         var i = 0;
         var delimSize = 0;
         while (i < this._queue.length) {
             let next = this._queue[i];
-            let json = JSON.stringify(next.event);
+            let json = JSON.stringify(next);
             var jsonLen = Buffer.byteLength(json, 'utf8');
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
@@ -196,7 +201,10 @@ class SeqLogger {
                 opts.headers["X-Seq-ApiKey"] = self._apiKey;
             }
 
-            var req = http.request(opts, res => {
+            let req = http.request(opts);
+            
+            req.on('response', res => {
+                res.on('data', () => {});           
                 res.on('error', e => {
                     reject(e);
                 });
@@ -209,14 +217,14 @@ class SeqLogger {
                 reject(e);
             });
 
-            req.write(header);           
+            req.write(HEADER);           
             var delim = ""; 
             for (var b = 0; b < batch.length; b++) {
                 req.write(delim);
                 delim = ",";
                 req.write(batch[b]);
             }
-            req.write(footer);
+            req.write(FOOTER);
             req.end();
         });
         

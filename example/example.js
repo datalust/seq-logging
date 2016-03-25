@@ -1,7 +1,7 @@
 "use strict";
 
 let process = require('process');
-let SeqLogger = require('./seq_logger');
+let SeqLogger = require('../seq_logger');
 
 let seq = new SeqLogger({ serverUrl: 'http://localhost:5341' });
 var n = 0;
@@ -21,6 +21,10 @@ function sayHello() {
             n: n
         }
     });
+    
+    if (n === 25) {
+        seq.flush();
+    }
     
     if (n === 100) {
         clearInterval(interval);
