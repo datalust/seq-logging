@@ -27,7 +27,7 @@ class SeqLogger {
         if (!serverUrl.endsWith('/')) {
             serverUrl += '/';
         }
-        this._endpoint = url.parse(serverUrl + '/api/events/raw/');
+        this._endpoint = url.parse(serverUrl + 'api/events/raw/');
         this._apiKey = cfg.apiKey || dflt.apiKey;    
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
@@ -39,10 +39,10 @@ class SeqLogger {
         this._activeShipper = null;
     }
 
-    // Flush queued events and wait for pending writes to complete, regardless
-    // of configured batching/timers.
+    // Flush events queued at the time of the call, and wait for pending writes to complete
+    // regardless of configured batching/timers.
     flush() {
-        this._ship({flush: true});
+        return this._ship({flush: true});
     }
 
     // Flush then close the logger, destroying timers and other resources.
@@ -62,6 +62,9 @@ class SeqLogger {
         if (!event) {
             throw new Error('An event must be provided');
         }
+        if (this._closed) {
+            return;
+        }
         let norm = this._normalize(event);
         this._queue.push({at: new Date(), event: norm});
         this._setTimer();
@@ -72,14 +75,14 @@ class SeqLogger {
             return;
         }
         
-        this._timer = setInterval(() => {
+        this._timer = setTimeout(() => {
             this._onTimer();
         }, this._maxBatchingTime);
     }
     
     _clearTimer() {
         if (this._timer !== null) {
-            clearInterval(this._timer);
+            clearTimeout(this._timer);
             this._timer = null;
         }
     }
