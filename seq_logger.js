@@ -88,6 +88,7 @@ class SeqLogger {
     }
 
     _onTimer() {
+        this._timer = null;
         this._ship({flush: false});
     }
 
@@ -114,6 +115,13 @@ class SeqLogger {
         };
     }
     
+    _reset() {
+        this._activeShipper = null;
+        if (this._queue.length !== 0) {
+            this._setTimer();
+        }
+    }
+    
     _ship(opts) {
         if (this._queue.lenth === 0) {
             return Promise.resolve(false);
@@ -130,10 +138,9 @@ class SeqLogger {
                 }
                 return this._sendBatch().then(c => more(c));
             })
-            .then(() => this._activeShipper = null)
-            .catch(e => {
+            .then(() => this._reset(), e => {
                 this._onError(e);
-                this._activeShipper = null;
+                this._reset();
             });
 
         return this._activeShipper;
@@ -148,6 +155,7 @@ class SeqLogger {
         var bytes = Buffer.byteLength(header, 'utf8') + Buffer.byteLength(footer, 'utf8');
         let batch = [];
         var i = 0;
+        var delimSize = 0;
         while (i < this._queue.length) {
             let next = this._queue[i];
             let json = JSON.stringify(next.event);
@@ -159,12 +167,13 @@ class SeqLogger {
                 jsonLen = Buffer.byteLength(json, 'utf8');
             }
             
-            if (bytes + jsonLen > this._batchSizeLimit) {
+            if (bytes + jsonLen + delimSize > this._batchSizeLimit) {
                 break;
             }
             
             i = i + 1;
-            bytes += jsonLen;
+            bytes += jsonLen + delimSize;
+            delimSize = 1; // ","
             batch.push(json);
         }
         
@@ -200,8 +209,11 @@ class SeqLogger {
                 reject(e);
             });
 
-            req.write(header);            
+            req.write(header);           
+            var delim = ""; 
             for (var b = 0; b < batch.length; b++) {
+                req.write(delim);
+                delim = ",";
                 req.write(batch[b]);
             }
             req.write(footer);
