@@ -20,7 +20,7 @@ class SeqLogger {
             maxBatchingTime: 2000,
             eventSizeLimit: 256 * 1024,
             batchSizeLimit: 1024 * 1024,
-            onError: e => { console.error(e); }
+            onError: e => { console.error("[seq]", e); }
         };
         let cfg = config || dflt;
         var serverUrl = cfg.serverUrl || dflt.serverUrl;
@@ -102,7 +102,7 @@ class SeqLogger {
         return {
             Timestamp: event.Timestamp,
             Level: event.Level,
-            MessageTemplate: "Event too large: {initial}...",
+            MessageTemplate: "(Event too large) {initial}...",
             Properties: {
                 initial: event.MessageTemplate.substring(0, 12),
                 sourceContext: "Seq Javascript Client", 
@@ -120,7 +120,7 @@ class SeqLogger {
         this._activeShipper = wait
             .then(() => {
                 let more = a => {
-                    if (!opts.flush) {
+                    if (!a || !opts.flush) {
                         return a;
                     }
                     return this._sendBatch().then(b => more(b));
@@ -150,7 +150,7 @@ class SeqLogger {
             let json = JSON.stringify(next.event);
             var jsonLen = Buffer.byteLength(json, 'utf8');
             if (jsonLen > this._eventSizeLimit) {
-                this._onError("[seq] Event payload is larger than " + this._eventSizeLimit + " bytes: " + json);
+                this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
                 this._queue[i] = next = this._eventTooLargeErrorEvent(next);
                 json = JSON.stringify(next);
                 jsonLen = Buffer.byteLength(json, 'utf8');
@@ -186,7 +186,6 @@ class SeqLogger {
 
             var req = http.request(opts, res => {
                 res.on('error', e => {
-                    this._onError(e);
                     reject(e);
                 });
                 res.on('end', () => {
@@ -194,8 +193,8 @@ class SeqLogger {
                 });
             });
             
-            req.on('error', e => {                
-                this._onError(e);
+            req.on('error', e => {
+                reject(e);
             });
 
             req.write(header);            
