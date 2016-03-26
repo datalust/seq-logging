@@ -13,10 +13,10 @@ function sayHello() {
     console.log('Round ', n);
     
     seq.emit({
-        Timestamp: new Date(),
-        Level: 'Information',
-        MessageTemplate: 'Hello for the {n}th time, {user}!',
-        Properties: {
+        timestamp: new Date(),
+        level: 'Information',
+        messageTemplate: 'Hello for the {n}th time, {user}!',
+        properties: {
             user: process.env.USERNAME,
             n: n
         }

@@ -44,8 +44,8 @@ describe('SeqLogger', () => {
       it('enqueues events', () => {
           let logger = new SeqLogger();
           logger.emit(makeTestEvent());
-          assert.equal(1, logger._queue.length);
           logger._clearTimer();
+          assert.equal(1, logger._queue.length);
       });
       
       it('ignores calls afer the logger is closed', () => {
@@ -55,13 +55,28 @@ describe('SeqLogger', () => {
              assert.equal(0, logger._queue.length); 
           });
       });
+      
+      it('converts events to the wire format', () => {
+          let logger = new SeqLogger();
+          let event = makeTestEvent();
+          logger.emit(event);
+          logger._clearTimer();
+          let wire = logger._queue[0];
+          assert.equal(event.messageTemplate, wire.MessageTemplate);
+          assert.equal(event.timestamp, wire.Timestamp);
+          assert.equal(event.level, wire.Level);
+          assert.equal(event.exception, wire.Exception);
+          assert.equal(event.properties.a, wire.Properties.a);
+      });
    });
-   
 });
 
 function makeTestEvent() {
     return {
+        Level: "Error",
         Timestamp: new Date(),
-        MessageTemplate: 'Hello!'
+        MessageTemplate: 'Hello!',
+        Exception: "Some error at some file on some line",
+        Properties: { "a": 1 }
     };
 }

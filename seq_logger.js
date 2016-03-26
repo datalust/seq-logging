@@ -70,8 +70,8 @@ class SeqLogger {
         if (this._closed) {
             return;
         }
-        let norm = this._normalize(event);
-        this._queue.push(event);
+        let norm = this._toWireFormat(event);
+        this._queue.push(norm);
         if (!this._activeShipper) {
             this._setTimer();
         }
@@ -99,13 +99,13 @@ class SeqLogger {
         this._ship();
     }
 
-    _normalize(event) {
+    _toWireFormat(event) {
         return {
-            Timestamp: event.Timestamp || new Date(),
-            Level: LEVELS[event.Level], // Missing is fine
-            MessageTemplate: event.MessageTemplate || "(No message provided)",
-            Exception: event.Exception, // Missing is fine
-            Properties: event.Properties // Missing is fine
+            Timestamp: event.timestamp || new Date(),
+            Level: LEVELS[event.level], // Missing is fine
+            MessageTemplate: event.messageTemplate || "(No message provided)",
+            Exception: event.exception, // Missing is fine
+            Properties: event.properties // Missing is fine
         };
     }
     
@@ -157,6 +157,12 @@ class SeqLogger {
         if (this._queue.length === 0) {
             return Promise.resolve(false);
         }
+
+        let dequeued = this._dequeBatch();
+        return this._post(dequeued.batch, dequeued.bytes);        
+    }
+    
+    _dequeBatch() {
         var bytes = HEADER_FOOTER_BYTES;
         let batch = [];
         var i = 0;
@@ -172,7 +178,9 @@ class SeqLogger {
                 jsonLen = Buffer.byteLength(json, 'utf8');
             }
             
-            if (bytes + jsonLen + delimSize > this._batchSizeLimit) {
+            // Always try to send a batch of at least one event, even if the batch size is
+            // tiny.
+            if (i !== 0 && bytes + jsonLen + delimSize > this._batchSizeLimit) {
                 break;
             }
             
@@ -183,8 +191,11 @@ class SeqLogger {
         }
         
         this._queue.splice(0, i);
-        
-        var p = new Promise((resolve, reject) => {
+        return {batch, bytes};
+    }
+    
+    _post(batch, bytes) {
+        return new Promise((resolve, reject) => {
             var opts = {
                 host: this._endpoint.hostname,
                 port: this._endpoint.port,
@@ -227,8 +238,6 @@ class SeqLogger {
             req.write(FOOTER);
             req.end();
         });
-        
-        return p;
     }
 }
 
