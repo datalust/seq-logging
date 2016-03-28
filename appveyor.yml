@@ -1,16 +1,6 @@
 version: '{build}'
-init:
-- cmd: >-
-    echo %NPM_USERNAME%> adduser.txt
-
-    echo %NPM_PASSWORD%>> adduser.txt
-
-    echo %NPM_EMAIL%>> adduser.txt
-
-    type adduser.txt | npm adduser
-
-    del adduser.txt
 environment:
+  NODE_VERSION: "4.2.2"
   NPM_USERNAME:
     secure: mHTyE5DVKgdc0uX8im15gw==
   NPM_PASSWORD:
@@ -18,10 +8,22 @@ environment:
   NPM_EMAIL:
     secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
 install:
-- cmd: npm install
+  - ps: >-
+    Install-Product node $env:NODE_VERSION
+    npm install -g npm
+    npm install
 build:
   verbosity: minimal
 test_script:
 - cmd: npm test
 deploy_script:
-- cmd: if %APPVEYOR_REPO_BRANCH% equ master npm publish
+- cmd: >-
+    if %APPVEYOR_REPO_BRANCH% neq master exit 
+    node --version
+    echo %NPM_USERNAME%> adduser.txt
+    echo %NPM_PASSWORD%>> adduser.txt
+    echo %NPM_EMAIL%>> adduser.txt    
+    echo >> adduser.txt
+    type adduser.txt | npm adduser
+    del adduser.txt
+    npm publish
