@@ -1,0 +1,29 @@
+version: '{build}'
+init:
+- cmd: >-
+    echo %NPM_USERNAME% > adduser.txt
+
+    echo %NPM_PASSWORD% >> adduser.txt
+
+    echo %NPM_EMAIL% >> adduser.txt
+
+    type adduser.txt
+
+    npm adduser < adduser.txt
+
+    del adduser.txt
+environment:
+  NPM_USERNAME:
+    secure: mHTyE5DVKgdc0uX8im15gw==
+  NPM_PASSWORD:
+    secure: FzxbhiwaBm3O1y9NehzsjQ==
+  NPM_EMAIL:
+    secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
+install:
+- cmd: npm install
+build:
+  verbosity: minimal
+test_script:
+- cmd: npm test
+deploy_script:
+- cmd: if %APPVEYOR_REPO_BRANCH% equ master npm publish
