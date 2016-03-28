@@ -8,7 +8,7 @@ environment:
   NPM_EMAIL:
     secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
 install:
-  - ps: >-
+- ps: >-
     Install-Product node $env:NODE_VERSION
     npm install -g npm
     npm install
