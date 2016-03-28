@@ -9,17 +9,19 @@ environment:
     secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
 install:
 - ps: >-
-    try {
-        
-        Install-Product node $env:NODE_VERSION
-        
-        & npm install -g npm
-        
-        & npm install 2>&1
+    Install-Product node $env:NODE_VERSION
     
-    } catch {
-        
-    }
+    & npm install -g npm
+    
+    $ErrorActionPreference = "SilentlyContinue"
+    
+    & npm install 2>&1
+    
+    trap { "Error: $_" }
+    
+    $LastExitCode = 0
+    
+    & npm --version
     
     exit 0
 build:
