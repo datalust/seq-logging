@@ -11,9 +11,9 @@ install:
 - ps: >-
     Install-Product node $env:NODE_VERSION
     
-    npm install -g npm
+    & npm install -g npm
     
-    npm install
+    & npm install 2>&1
 build:
   verbosity: minimal
 test_script:
