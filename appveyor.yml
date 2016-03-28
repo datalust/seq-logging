@@ -9,11 +9,13 @@ environment:
     secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
 install:
 - ps: >-
+    $ErrorActionPreference = "SilentlyContinue"
+    
     Install-Product node $env:NODE_VERSION
     
-    & npm install -g npm
+    & npm install -g npm 2>&1
     
-    $ErrorActionPreference = "SilentlyContinue"
+    & npm install 2>&1
     
     trap { "Error: $_" }
     
