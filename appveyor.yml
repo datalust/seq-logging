@@ -22,8 +22,7 @@ install:
     $LastExitCode = 0
     
     & npm --version
-build:
-- cmd: echo "Nothing to build"
+build: none
 test_script:
 - cmd: npm test
 deploy_script:

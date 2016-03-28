@@ -73,10 +73,10 @@ describe('SeqLogger', () => {
 
 function makeTestEvent() {
     return {
-        Level: "Error",
-        Timestamp: new Date(),
-        MessageTemplate: 'Hello!',
-        Exception: "Some error at some file on some line",
-        Properties: { "a": 1 }
+        level: "Error",
+        timestamp: new Date(),
+        messageTemplate: 'Hello!',
+        exception: "Some error at some file on some line",
+        properties: { "a": 1 }
     };
 }
