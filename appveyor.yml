@@ -23,7 +23,7 @@ install:
     
     & npm --version
 build:
-  verbosity: minimal
+  cmd: echo "Nothing to build"
 test_script:
 - cmd: npm test
 deploy_script:
