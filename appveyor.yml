@@ -15,8 +15,6 @@ install:
     
     $ErrorActionPreference = "SilentlyContinue"
     
-    & npm install 2>&1
-    
     trap { "Error: $_" }
     
     $LastExitCode = 0
