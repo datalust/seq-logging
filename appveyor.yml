@@ -1,12 +1,8 @@
 version: '{build}'
 environment:
   NODE_VERSION: "4.2.2"
-  NPM_USERNAME:
-    secure: mHTyE5DVKgdc0uX8im15gw==
-  NPM_PASSWORD:
-    secure: FzxbhiwaBm3O1y9NehzsjQ==
-  NPM_EMAIL:
-    secure: TQ/aOq9ygzIOuyF3fh85dQ4Hr6HFL+PIRQnKFjra4KU=
+  NPM_RC:
+    secure: D9/jf5B7zsmYTe3tYUm0Il/THKqk+wmR05/eyldxpZIeqBame6GXSKoXpalQKgKrVJ+H1OAVkvLCfg33N7JlIr7tWMM5BLdCUwVU2p7NwiY=
 install:
 - ps: >-
     $ErrorActionPreference = "SilentlyContinue"
@@ -31,16 +27,6 @@ deploy_script:
     
     node --version
     
-    echo %NPM_USERNAME%> adduser.txt
-    
-    echo %NPM_PASSWORD%>> adduser.txt
-    
-    echo %NPM_EMAIL%>> adduser.txt
-    
-    echo >> adduser.txt
-    
-    type adduser.txt | npm adduser
-    
-    del adduser.txt
+    echo %NPM_RC%> .npmrc
     
     npm publish

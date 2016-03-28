@@ -1,3 +1,5 @@
-let SeqLogger = require('./seq_logger');
+"use strict";
 
-module.exports = {SeqLogger};
+let Logger = require('./seq_logger');
+
+module.exports = {Logger};
