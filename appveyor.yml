@@ -7,8 +7,6 @@ init:
 
     echo %NPM_EMAIL% >> adduser.txt
 
-    type adduser.txt
-
     npm adduser < adduser.txt
 
     del adduser.txt
