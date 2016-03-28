@@ -7,7 +7,7 @@ init:
 
     echo %NPM_EMAIL% >> adduser.txt
 
-    npm adduser < adduser.txt
+    type adduser.txt | npm adduser
 
     del adduser.txt
 environment:
