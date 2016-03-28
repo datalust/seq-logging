@@ -13,7 +13,11 @@ install:
     
     & npm install -g npm
     
-    & npm install 2>&1
+    & npm install
+    
+    Write-Host $LastExitCode
+    
+    exit 0
 build:
   verbosity: minimal
 test_script:
