@@ -22,8 +22,6 @@ install:
     $LastExitCode = 0
     
     & npm --version
-    
-    exit 0
 build:
   verbosity: minimal
 test_script:
