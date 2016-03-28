@@ -13,7 +13,7 @@ install:
     
     & npm install -g npm
     
-    $ErrorActionPreference = SilentlyContinue
+    $ErrorActionPreference = "SilentlyContinue"
     
     & npm install
     
