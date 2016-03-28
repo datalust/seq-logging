@@ -13,9 +13,8 @@ install:
     
     & npm install -g npm
     
+    $ErrorActionPreference = SilentlyContinue
     & npm install
-    
-    Write-Host $LastExitCode
     
     exit 0
 build:
