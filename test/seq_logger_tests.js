@@ -11,7 +11,7 @@ describe('SeqLogger', () => {
          assert.equal(logger._endpoint.hostname, 'localhost'); 
          assert.equal(logger._endpoint.port, 5341); 
          assert.equal(logger._endpoint.protocol, 'http:');
-         assert.equal(logger._endpoint.path, '/api/events/raw/');         
+         assert.equal(logger._endpoint.path, '/api/events/raw');         
          assert.equal(logger._apiKey, null);
       });
       
@@ -20,13 +20,13 @@ describe('SeqLogger', () => {
          assert.equal(logger._endpoint.hostname, 'my-seq'); 
          assert.equal(logger._endpoint.port, null); 
          assert.equal(logger._endpoint.protocol, 'https:');
-         assert.equal(logger._endpoint.path, '/prd/api/events/raw/');         
+         assert.equal(logger._endpoint.path, '/prd/api/events/raw');         
          assert.equal(logger._apiKey, '12345');
       });
       
       it('correctly formats slashed paths', () => {
          let logger = new SeqLogger({serverUrl: 'https://my-seq/prd/'});
-         assert.equal(logger._endpoint.path, '/prd/api/events/raw/');         
+         assert.equal(logger._endpoint.path, '/prd/api/events/raw');         
       });
    });
    
