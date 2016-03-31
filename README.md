@@ -1,6 +1,6 @@
 # Seq Logging for JavaScript [![Build status](https://ci.appveyor.com/api/projects/status/j579f7e7dpdo91u7/branch/master?svg=true)](https://ci.appveyor.com/project/seqlogs/seq-logging/branch/master) [![NPM](https://img.shields.io/npm/v/seq-logging.svg)](https://www.npmjs.com/package/seq-logging)
 
-> This library makes it easy to support Seq from Node.js logging libraries, currently `node-bunyan` (see **Implementations** below). It is not expected that applications will interact directly with this package.
+> This library makes it easy to support Seq from Node.js logging libraries, initially [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq). It is not expected that applications will interact directly with this package.
 
 ### Usage
 

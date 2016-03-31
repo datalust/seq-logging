@@ -32,7 +32,7 @@ class SeqLogger {
         if (!serverUrl.endsWith('/')) {
             serverUrl += '/';
         }
-        this._endpoint = url.parse(serverUrl + 'api/events/raw/');
+        this._endpoint = url.parse(serverUrl + 'api/events/raw');
         this._apiKey = cfg.apiKey || dflt.apiKey;    
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
@@ -47,7 +47,7 @@ class SeqLogger {
     // Flush events queued at the time of the call, and wait for pending writes to complete
     // regardless of configured batching/timers.
     flush() {
-        return this._ship({flush: true});
+        return this._ship();
     }
 
     // Flush then close the logger, destroying timers and other resources.
@@ -96,7 +96,9 @@ class SeqLogger {
     }
 
     _onTimer() {
-        this._ship();
+        if (!this._activeShipper) {
+            this._ship();
+        }
     }
 
     _toWireFormat(event) {
@@ -122,10 +124,12 @@ class SeqLogger {
         };
     }
     
-    _reset() {
-        this._activeShipper = null;
-        if (this._queue.length !== 0) {
-            this._setTimer();
+    _reset(shipper) {
+        if (this._activeShipper === shipper) {
+            this._activeShipper = null;
+            if (this._queue.length !== 0) {
+                this._setTimer();
+            }
         }
     }
     
@@ -137,17 +141,19 @@ class SeqLogger {
         let wait = this._activeShipper || Promise.resolve(false);
         let shipper = this._activeShipper = wait
             .then(() => {
-                let more = a => {
-                    if (!a) {
-                        return a;
+                let more = drained => {
+                    if (drained) {
+                        // If the queue was drained, let the timer
+                        // push us forwards.
+                        return true;
                     }
-                    return this._sendBatch().then(b => more(b));
+                    return this._sendBatch().then(d => more(d));
                 }
-                return this._sendBatch().then(c => more(c));
+                return this._sendBatch().then(drained => more(drained));
             })
-            .then(() => this._reset(), e => {
+            .then(() => this._reset(shipper), e => {
                 this._onError(e);
-                this._reset();
+                this._reset(shipper);
             });
 
         return shipper;
@@ -155,11 +161,12 @@ class SeqLogger {
     
     _sendBatch() {
         if (this._queue.length === 0) {
-            return Promise.resolve(false);
+            return Promise.resolve(true);
         }
 
         let dequeued = this._dequeBatch();
-        return this._post(dequeued.batch, dequeued.bytes);        
+        let drained = this._queue.length === 0;
+        return this._post(dequeued.batch, dequeued.bytes).then(() => drained);        
     }
     
     _dequeBatch() {
@@ -215,12 +222,21 @@ class SeqLogger {
             let req = http.request(opts);
             
             req.on('response', res => {
+                var httpErr = null;
+                if (res.statusCode !== 200 && res.statusCode !== 201) {
+                    httpErr = 'HTTP log shipping failed: ' + res.statusCode;
+                }
+                
                 res.on('data', () => {});           
                 res.on('error', e => {
                     reject(e);
                 });
                 res.on('end', () => {
-                    resolve(true); 
+                    if (httpErr !== null) {
+                        reject(httpErr);
+                    } else {
+                        resolve(true); 
+                    }
                 });
             });
             
