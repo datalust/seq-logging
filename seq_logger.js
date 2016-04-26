@@ -134,7 +134,7 @@ class SeqLogger {
     }
     
     _ship() {
-        if (this._queue.lenth === 0) {
+        if (this._queue.length === 0) {
             return Promise.resolve(false);
         }
         
