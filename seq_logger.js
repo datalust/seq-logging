@@ -216,7 +216,7 @@ class SeqLogger {
             };
             
             if (this._apiKey) {
-                opts.headers["X-Seq-ApiKey"] = self._apiKey;
+                opts.headers["X-Seq-ApiKey"] = this._apiKey;
             }
 
             let req = http.request(opts);
