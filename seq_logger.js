@@ -1,6 +1,7 @@
 "use strict";
 
 let http = require('http');
+let https = require('https');
 let url = require('url');
 
 const LEVELS = {
@@ -219,7 +220,8 @@ class SeqLogger {
                 opts.headers["X-Seq-ApiKey"] = this._apiKey;
             }
 
-            let req = http.request(opts);
+            let requestFactory = opts.protocol === 'https:' ? https : http;
+            let req = requestFactory.request(opts);
             
             req.on('response', res => {
                 var httpErr = null;
