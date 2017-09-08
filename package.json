@@ -1,8 +1,11 @@
 {
   "name": "seq-logging",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
-  "keywords": ["seq", "logging"],
+  "keywords": [
+    "seq",
+    "logging"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha",
@@ -12,10 +15,12 @@
   "license": "Apache-2.0",
   "homepage": "https://github.com/continuousit/seq-logging",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/continuousit/seq-logging.git"
+    "type": "git",
+    "url": "https://github.com/continuousit/seq-logging.git"
   },
   "devDependencies": {
-    "mocha": "^2.4.5"
+    "mocha": "^2.4.5",
+    "superagent": "^3.6.0",
+    "uuid": "^3.1.0"
   }
 }
