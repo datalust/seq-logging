@@ -1,6 +1,6 @@
 version: '{build}'
 environment:
-  NODE_VERSION: "6.11.3"
+  NODE_VERSION: "6"
   NPM_RC:
     secure: D9/jf5B7zsmYTe3tYUm0Il/THKqk+wmR05/eyldxpZIeqBame6GXSKoXpalQKgKrVJ+H1OAVkvLCfg33N7JlIr7tWMM5BLdCUwVU2p7NwiY=
 install:
