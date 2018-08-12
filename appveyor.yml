@@ -1,8 +1,8 @@
 version: '{build}'
 environment:
   NODE_VERSION: "6"
-  NPM_RC:
-    secure: D9/jf5B7zsmYTe3tYUm0Il/THKqk+wmR05/eyldxpZIeqBame6GXSKoXpalQKgKrVJ+H1OAVkvLCfg33N7JlIr7tWMM5BLdCUwVU2p7NwiY=
+  NPM_TOKEN:
+    secure: Xcfvwit/+0KAyunoSBZZ0Fh6edpi0P4xhBkH01nt+Y8WQI5VEfiniA3+Kal2XH9S
 install:
 - ps: >-
     $ErrorActionPreference = "SilentlyContinue"
@@ -26,7 +26,5 @@ deploy_script:
     if %APPVEYOR_REPO_BRANCH% neq master exit 
     
     node --version
-    
-    echo %NPM_RC%> .npmrc
-    
+        
     npm publish
