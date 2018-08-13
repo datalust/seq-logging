@@ -25,6 +25,8 @@ deploy_script:
 - cmd: >-
     if %APPVEYOR_REPO_BRANCH% neq master exit 
     
+    echo //registry.npmjs.org/:_authToken=%NPM_TOKEN%> .npmrc
+
     node --version
         
     npm publish
