@@ -1,6 +1,6 @@
 version: '{build}'
 environment:
-  NODE_VERSION: "6"
+  NODE_VERSION: "10"
   NPM_TOKEN:
     secure: Xcfvwit/+0KAyunoSBZZ0Fh6edpi0P4xhBkH01nt+Y8WQI5VEfiniA3+Kal2XH9S
 install:
