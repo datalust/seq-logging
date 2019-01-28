@@ -29,6 +29,8 @@ Events are sent using the `emit()` method, that internally performs asynchronous
 
 When the application exits, `close()` ensures all buffered events are written. This can be done at any time otherwise using the `flush()` method. Both of these methods return promises indicating completion.
 
+When logging from a browser, and the application is being navigated away or closed, a `pagehide` or `unload` event listener has limited options and asynchronous methods will usually not succeed.  In that case, the application can call `flushToBeacon()` to queue all remaining buffered events into [`navigator.sendBeacon()`](https://developer.mozilla.org/docs/Web/API/Navigator/sendBeacon).  There is a size limit imposed by browsers so this is a best-effort attempt.
+
 ### Implementations
 
  * [bunyan-seq](https://github.com/continuousit/bunyan-seq) - collect events from the Buyan logging framework
