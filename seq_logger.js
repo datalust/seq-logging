@@ -67,8 +67,8 @@ class SeqLogger {
 
         const currentBatchSizeLimit = this._batchSizeLimit;
         const currentEventSizeLimit = this._eventSizeLimit;
-        this._batchSizeLimit = 63 * 1024;
-        this._eventSizeLimit = 63 * 1024;
+        this._batchSizeLimit = Math.min(63 * 1024, this._batchSizeLimit);
+        this._eventSizeLimit = Math.min(63 * 1024, this._eventSizeLimit);
 
         const dequeued = this._dequeBatch();
 
