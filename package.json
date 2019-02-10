@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "mocha": "^5.2.0",
+    "simple-mock": "^0.8.0",
     "superagent": "^3.8.3",
     "uuid": "^3.3.2"
   }

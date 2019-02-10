@@ -51,6 +51,36 @@ class SeqLogger {
         return this._ship();
     }
 
+    // A browser only function that queues events for sending using the
+    // navigator.sendBeacon() API.  This may work in an unload or pagehide event
+    // handler when a normal flush() would not.
+    // Events over 63K in length are discarded (with a warning sent in its place) 
+    // and the total size batch will be no more than 63K in length.
+    flushToBeacon() {
+        if (this._queue.length === 0) {
+            return false;
+        }
+
+        if (typeof navigator === 'undefined' || !navigator.sendBeacon || typeof Blob === 'undefined') {
+            return false;
+        }
+
+        const currentBatchSizeLimit = this._batchSizeLimit;
+        const currentEventSizeLimit = this._eventSizeLimit;
+        this._batchSizeLimit = Math.min(63 * 1024, this._batchSizeLimit);
+        this._eventSizeLimit = Math.min(63 * 1024, this._eventSizeLimit);
+
+        const dequeued = this._dequeBatch();
+
+        this._batchSizeLimit = currentBatchSizeLimit;
+        this._eventSizeLimit = currentEventSizeLimit;
+
+        const {dataParts, options, beaconUrl, size} = this._prepForBeacon(dequeued);
+
+        const data = new Blob(dataParts, options);
+        return navigator.sendBeacon(beaconUrl, data);
+    }
+
     // Flush then close the logger, destroying timers and other resources.
     close() {
         if (this._closed) {
@@ -256,6 +286,24 @@ class SeqLogger {
             req.write(FOOTER);
             req.end();
         });
+    }
+
+    _prepForBeacon(dequeued) {        
+        const {batch, bytes} = dequeued;
+
+        const dataParts = [HEADER, batch.join(','), FOOTER];
+
+        // CORS-safelisted for the Content-Type request header
+        const options = {type: 'text/plain'};
+        
+        const endpointWithKey = Object.assign({}, this._endpoint, {query: {'apiKey': this._apiKey}});
+
+        return {
+            dataParts,
+            options,
+            beaconUrl: url.format(endpointWithKey),
+            size: bytes,
+        };
     }
 }
 
