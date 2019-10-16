@@ -34,4 +34,4 @@ When logging from a browser, and the application is being navigated away or clos
 ### Implementations
 
  * [bunyan-seq](https://github.com/continuousit/bunyan-seq) - collect events from the Buyan logging framework
- 
+ * [winston-seq](https://github.com/SuperPaintman/winston-seq) - A Seq transport for Winston
