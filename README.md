@@ -5,6 +5,7 @@
 ### Usage
 
 A `Logger` is configured with `serverUrl`, and optionally `apiKey` as well as event and batch size limits.
+`requestTimeout` can be used to adjust timeout for stalled connections, default: 30s.
 
 ```js
 let process = require('process');

@@ -26,6 +26,7 @@ class SeqLogger {
             maxBatchingTime: 2000,
             eventSizeLimit: 256 * 1024,
             batchSizeLimit: 1024 * 1024,
+            requestTimeout: 30000,
             onError: e => { console.error("[seq]", e); }
         };
         let cfg = config || dflt;
@@ -38,6 +39,7 @@ class SeqLogger {
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
         this._batchSizeLimit = cfg.batchSizeLimit || dflt.batchSizeLimit;
+        this._requestTimeout = cfg.requestTimeout || dflt.requestTimeout;
         this._onError = cfg.onError || dflt.onError;
         this._queue = [];
         this._timer = null;
@@ -243,7 +245,8 @@ class SeqLogger {
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Length': bytes
-                }
+                },
+                timeout: this._requestTimeout
             };
             
             if (this._apiKey) {
@@ -252,6 +255,13 @@ class SeqLogger {
 
             let requestFactory = opts.protocol === 'https:' ? https : http;
             let req = requestFactory.request(opts);
+
+            req.on("socket", (socket) => {
+                socket.on("timeout", () => {
+                    req.abort();
+                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
+                })
+            });
             
             req.on('response', res => {
                 var httpErr = null;
