@@ -21,7 +21,7 @@ export interface SeqEvent {
 export declare class SeqLogger {
   constructor(config: SeqLoggerConfig);
 
-  emit(): void;
+  emit(event: SeqEvent): void;
   close(): Promise<boolean>;
   flush(): Promise<boolean>;
   flushToBeacon(): Promise<boolean>;
