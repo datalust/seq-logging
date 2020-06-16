@@ -18,7 +18,7 @@ export interface SeqEvent {
   exception?: string;
 }
 
-export declare class SeqLogger {
+export declare class Logger {
   constructor(config: SeqLoggerConfig);
 
   emit(event: SeqEvent): void;
