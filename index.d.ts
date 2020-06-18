@@ -6,9 +6,14 @@ export interface SeqLoggerConfig {
   batchSizeLimit?: number;
   requestTimeout?: number;
   onError: (e: Error) => void;
+  onRemoteConfigChange?: (remoteConfig: RemoteConfig) => void;
 }
 
 export type SeqLogLevel = 'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';
+
+export interface RemoteConfig{
+  MinimumLevelAccepted: SeqLogLevel | null
+}
 
 export interface SeqEvent {
   timestamp: Date;
