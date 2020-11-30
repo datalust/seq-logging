@@ -201,6 +201,10 @@ class SeqLogger {
         let drained = this._queue.length === 0;
         return this._post(dequeued.batch, dequeued.bytes).then(() => drained);        
     }
+
+    _wipeQueue() {
+        this._queue = [];
+    }
     
     _dequeBatch() {
         var bytes = HEADER_FOOTER_BYTES;
@@ -209,7 +213,13 @@ class SeqLogger {
         var delimSize = 0;
         while (i < this._queue.length) {
             let next = this._queue[i];
-            let json = JSON.stringify(next);
+            let json;
+            try {
+                json = JSON.stringify(next);
+            }
+            catch(e) {
+                json = JSON.stringify(removeCirculars(next));
+            }
             var jsonLen = Buffer.byteLength(json, 'utf8');
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
@@ -318,3 +328,40 @@ class SeqLogger {
 }
 
 module.exports = SeqLogger;
+
+const MAX_DEPTH = 10;
+
+function removeCirculars(object) {
+    const seenObjects = new WeakMap();
+
+    function removeCircularsInner(obj, depth = 0) {
+        if (!obj) return obj;
+        if (obj instanceof Date) return obj;
+
+        // falsy, seen or max depth
+        const skip =
+            !obj || seenObjects.has(obj) || depth > MAX_DEPTH;
+
+        const originalObj = obj;
+        let result = Array.isArray(obj) ? [] : {};
+
+        Object.keys(originalObj).forEach(entry => {
+            const val = originalObj[entry];
+
+            if (!skip) {
+                if (typeof val === "object") {
+                    seenObjects.set(originalObj, null);
+                    result[entry] = removeCircularsInner(val, depth + 1);
+                } else {
+                    result[entry] = val;
+                }
+            } else {
+                result = "== Circular structure ==";
+            }
+        });
+
+        return result;
+    }
+
+    return removeCircularsInner(object);
+}
