@@ -202,10 +202,6 @@ class SeqLogger {
         return this._post(dequeued.batch, dequeued.bytes).then(() => drained);        
     }
 
-    _wipeQueue() {
-        this._queue = [];
-    }
-    
     _dequeBatch() {
         var bytes = HEADER_FOOTER_BYTES;
         let batch = [];
@@ -218,7 +214,15 @@ class SeqLogger {
                 json = JSON.stringify(next);
             }
             catch(e) {
-                json = JSON.stringify(removeCirculars(next));
+                const cleaned = removeCirculars(next);
+                json = JSON.stringify(cleaned);
+                // Log that this event to be able to detect circular structures
+                // using same timestamp as cleaned event to make finding it easier
+                this.emit({
+                    timestamp: cleaned.Timestamp,
+                    level: "Error",
+                    messageTemplate: "[seq] Circular structure found"
+                });
             }
             var jsonLen = Buffer.byteLength(json, 'utf8');
             if (jsonLen > this._eventSizeLimit) {
@@ -329,39 +333,42 @@ class SeqLogger {
 
 module.exports = SeqLogger;
 
-const MAX_DEPTH = 10;
 
-function removeCirculars(object) {
-    const seenObjects = new WeakMap();
+const isValue = (obj) => {
+    if (!obj) return true;
+    if (typeof obj !== "object") return true;
+    return false;
+};
 
-    function removeCircularsInner(obj, depth = 0) {
-        if (!obj) return obj;
-        if (obj instanceof Date) return obj;
-
-        // falsy, seen or max depth
-        const skip =
-            !obj || seenObjects.has(obj) || depth > MAX_DEPTH;
-
-        const originalObj = obj;
-        let result = Array.isArray(obj) ? [] : {};
-
-        Object.keys(originalObj).forEach(entry => {
-            const val = originalObj[entry];
-
-            if (!skip) {
-                if (typeof val === "object") {
-                    seenObjects.set(originalObj, null);
-                    result[entry] = removeCircularsInner(val, depth + 1);
-                } else {
-                    result[entry] = val;
-                }
-            } else {
-                result = "== Circular structure ==";
-            }
-        });
-
-        return result;
+const removeCirculars = (obj, branch = new Map(), path = "root") => {
+    if (isValue(obj)) return obj;
+    if (branch.has(obj)) {
+        // In seq it is more clear if we remove the root.Properties object path
+        const circularPath = branch.get(obj).replace("root.Properties.", "");
+        return "== Circular structure: '" + circularPath + "' ==";
     }
-
-    return removeCircularsInner(object);
-}
+    else {
+        branch.set(obj, path);
+    }
+    
+    if (obj instanceof Array) {
+        return obj.map((value, i) =>
+            isValue(value) ? value : removeCirculars(value, new Map(branch), path + `[${i}]`)
+        );
+    }
+    const keys = Object.keys(obj);
+    // Will rescue Date and other classes.
+    if (keys.length === 0) {
+        return obj;
+    }
+    const replaced = {};
+    keys.forEach((key) => {
+        const value = obj[key];
+        if (isValue(value)) {
+            replaced[key] = value;
+            return;
+        }
+        replaced[key] = removeCirculars(value, new Map(branch), path + "." + key);
+    });
+    return replaced;
+};

@@ -115,12 +115,7 @@ describe('SeqLogger', () => {
         let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
         const event = makeCircularTestEvent();
         logger.emit(event);
-        try {
-            logger.flushToBeacon();
-        }
-        finally {
-            logger._wipeQueue();
-        }
+        logger.flushToBeacon();
       });
 
        afterEach(function() {
@@ -147,7 +142,7 @@ function makeCircularTestEvent() {
     return {
         level: "Error",
         timestamp: new Date(),
-        messageTemplate: 'Circular dependency issue!',
+        messageTemplate: 'Circular structure issue!',
         exception: "Some error at some file on some line",
         properties: { a }
     };
