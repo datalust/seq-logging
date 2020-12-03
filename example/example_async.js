@@ -11,7 +11,6 @@ sayHello(100)
     .then(() => seq.close());
 
 async function sayHello(times) {
-    n = n + 1;
     for(let n = 0; n <= times; n++){
         await new Promise((accept) => setTimeout(accept, 1 * 1000)); // Waits 1 second before each round
 
