@@ -45,6 +45,8 @@ class SeqLogger {
         this._timer = null;
         this._closed = false;
         this._activeShipper = null;
+        this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
+        this._lastRemoteConfig = null;
     }
 
     // Flush events queued at the time of the call, and wait for pending writes to complete
@@ -283,7 +285,15 @@ class SeqLogger {
                     httpErr = 'HTTP log shipping failed: ' + res.statusCode;
                 }
                 
-                res.on('data', () => {});           
+                res.on('data', (buffer) => {
+                    let dataRaw = buffer.toString(); 
+
+                    if(this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw){
+                        this._lastRemoteConfig = dataRaw;
+                        this._onRemoteConfigChange(JSON.parse(dataRaw));
+                    }
+                });           
+
                 res.on('error', e => {
                     reject(e);
                 });
