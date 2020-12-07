@@ -45,6 +45,8 @@ class SeqLogger {
         this._timer = null;
         this._closed = false;
         this._activeShipper = null;
+        this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
+        this._lastRemoteConfig = null;
     }
 
     // Flush events queued at the time of the call, and wait for pending writes to complete
@@ -201,7 +203,7 @@ class SeqLogger {
         let drained = this._queue.length === 0;
         return this._post(dequeued.batch, dequeued.bytes).then(() => drained);        
     }
-    
+
     _dequeBatch() {
         var bytes = HEADER_FOOTER_BYTES;
         let batch = [];
@@ -209,7 +211,21 @@ class SeqLogger {
         var delimSize = 0;
         while (i < this._queue.length) {
             let next = this._queue[i];
-            let json = JSON.stringify(next);
+            let json;
+            try {
+                json = JSON.stringify(next);
+            }
+            catch(e) {
+                const cleaned = removeCirculars(next);
+                json = JSON.stringify(cleaned);
+                // Log that this event to be able to detect circular structures
+                // using same timestamp as cleaned event to make finding it easier
+                this.emit({
+                    timestamp: cleaned.Timestamp,
+                    level: "Error",
+                    messageTemplate: "[seq] Circular structure found"
+                });
+            }
             var jsonLen = Buffer.byteLength(json, 'utf8');
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
@@ -269,7 +285,15 @@ class SeqLogger {
                     httpErr = 'HTTP log shipping failed: ' + res.statusCode;
                 }
                 
-                res.on('data', () => {});           
+                res.on('data', (buffer) => {
+                    let dataRaw = buffer.toString(); 
+
+                    if(this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw){
+                        this._lastRemoteConfig = dataRaw;
+                        this._onRemoteConfigChange(JSON.parse(dataRaw));
+                    }
+                });           
+
                 res.on('error', e => {
                     reject(e);
                 });
@@ -318,3 +342,43 @@ class SeqLogger {
 }
 
 module.exports = SeqLogger;
+
+
+const isValue = (obj) => {
+    if (!obj) return true;
+    if (typeof obj !== "object") return true;
+    return false;
+};
+
+const removeCirculars = (obj, branch = new Map(), path = "root") => {
+    if (isValue(obj)) return obj;
+    if (branch.has(obj)) {
+        // In seq it is more clear if we remove the root.Properties object path
+        const circularPath = branch.get(obj).replace("root.Properties.", "");
+        return "== Circular structure: '" + circularPath + "' ==";
+    }
+    else {
+        branch.set(obj, path);
+    }
+    
+    if (obj instanceof Array) {
+        return obj.map((value, i) =>
+            isValue(value) ? value : removeCirculars(value, new Map(branch), path + `[${i}]`)
+        );
+    }
+    const keys = Object.keys(obj);
+    // Will rescue Date and other classes.
+    if (keys.length === 0) {
+        return obj;
+    }
+    const replaced = {};
+    keys.forEach((key) => {
+        const value = obj[key];
+        if (isValue(value)) {
+            replaced[key] = value;
+            return;
+        }
+        replaced[key] = removeCirculars(value, new Map(branch), path + "." + key);
+    });
+    return replaced;
+};

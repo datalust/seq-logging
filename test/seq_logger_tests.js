@@ -111,8 +111,16 @@ describe('SeqLogger', () => {
            assert.equal(sendBeacon.lastCall.args[1].size, 166);
        });
 
+       it('does handle event properties with circular structures', () => {
+        let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
+        const event = makeCircularTestEvent();
+        logger.emit(event);
+        logger.flushToBeacon();
+      });
+
        afterEach(function() {
-           simple.restore();
+            sendBeacon.reset();
+            simple.restore();
        });
    });
 });
@@ -124,5 +132,18 @@ function makeTestEvent() {
         messageTemplate: 'Hello!',
         exception: "Some error at some file on some line",
         properties: { "a": 1 }
+    };
+}
+
+function makeCircularTestEvent() {
+    const a = {};
+    a.a = a;
+
+    return {
+        level: "Error",
+        timestamp: new Date(),
+        messageTemplate: 'Circular structure issue!',
+        exception: "Some error at some file on some line",
+        properties: { a }
     };
 }

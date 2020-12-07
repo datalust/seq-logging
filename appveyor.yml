@@ -27,4 +27,4 @@ deploy_script:
 
     node --version
         
-    if %APPVEYOR_REPO_BRANCH% equ master npm publish
+    if %APPVEYOR_REPO_BRANCH% equ main npm publish

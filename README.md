@@ -1,6 +1,6 @@
 # Seq Logging for JavaScript [![Build status](https://ci.appveyor.com/api/projects/status/j579f7e7dpdo91u7?svg=true)](https://ci.appveyor.com/project/datalust/seq-logging) [![NPM](https://img.shields.io/npm/v/seq-logging.svg)](https://www.npmjs.com/package/seq-logging)
 
-> This library makes it easy to support Seq from Node.js logging libraries, initially [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq). It is not expected that applications will interact directly with this package.
+> This library makes it easy to support Seq from Node.js logging libraries, including [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), and [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq). It is not expected that applications will interact directly with this package.
 
 ### Usage
 

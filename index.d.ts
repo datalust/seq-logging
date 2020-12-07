@@ -6,9 +6,14 @@ export interface SeqLoggerConfig {
   batchSizeLimit?: number;
   requestTimeout?: number;
   onError: (e: Error) => void;
+  onRemoteConfigChange?: (remoteConfig: RemoteConfig) => void;
 }
 
 export type SeqLogLevel = 'Verbose' | 'Debug' | 'Information' | 'Warning' | 'Error' | 'Fatal';
+
+export interface RemoteConfig{
+  MinimumLevelAccepted: SeqLogLevel | null
+}
 
 export interface SeqEvent {
   timestamp: Date;
@@ -18,7 +23,7 @@ export interface SeqEvent {
   exception?: string;
 }
 
-export declare class SeqLogger {
+export declare class Logger {
   constructor(config: SeqLoggerConfig);
 
   emit(event: SeqEvent): void;
