@@ -2,7 +2,7 @@ version: '{build}'
 environment:
   NODE_VERSION: "10"
   NPM_TOKEN:
-    secure: Xcfvwit/+0KAyunoSBZZ0Fh6edpi0P4xhBkH01nt+Y8WQI5VEfiniA3+Kal2XH9S
+    secure: Zl+/rT2jbEm0NQhWC0YDV/fY8i/EYBYCd821ZXe9xgGVmQOG45wyBrZH4whkdjHs
 install:
 - ps: >-
     $ErrorActionPreference = "SilentlyContinue"
