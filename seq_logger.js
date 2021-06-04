@@ -27,6 +27,8 @@ class SeqLogger {
             eventSizeLimit: 256 * 1024,
             batchSizeLimit: 1024 * 1024,
             requestTimeout: 30000,
+            maxRetries: 5,
+            retryDelay: 5000,
             onError: e => { console.error("[seq]", e); }
         };
         let cfg = config || dflt;
@@ -41,6 +43,9 @@ class SeqLogger {
         this._batchSizeLimit = cfg.batchSizeLimit || dflt.batchSizeLimit;
         this._requestTimeout = cfg.requestTimeout || dflt.requestTimeout;
         this._onError = cfg.onError || dflt.onError;
+        this._maxRetries = cfg.maxRetries || dflt.maxRetries;
+        this._retryDelay = cfg.retryDelay || dflt.retryDelay;
+
         this._queue = [];
         this._timer = null;
         this._closed = false;
@@ -98,7 +103,7 @@ class SeqLogger {
         return navigator.sendBeacon(beaconUrl, data);
     }
 
-    // Flush then close the logger, destroying timers and other resources.
+    // Flush then destory connections, close the logger, destroying timers and other resources.
     close() {
         if (this._closed) {
             throw new Error('The logger has already been closed.');
@@ -263,65 +268,85 @@ class SeqLogger {
         this._queue.splice(0, i);
         return {batch, bytes};
     }
-    
+
+    _httpOrNetworkError(res) {
+        const networkErrors = ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN', 'EBUSY'];
+        return networkErrors.includes(res) || 500 <= res.statusCode && res.statusCode < 600;
+    }
+
     _post(batch, bytes) {
+        let attempts = 0;
+
         return new Promise((resolve, reject) => {
-            let requestFactory = this._endpoint.protocol === "https:" ? https : http;
-            let req = requestFactory.request({
-                agent: this._httpAgent,
-                headers: {
-                    "Content-Length": bytes,
-                },
-                path: this._endpoint.path,
-                method: "POST"
-            });
-            req.on("socket", (socket) => {
-                socket.on("timeout", () => {
-                    req.abort();
-                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
-                })
-            });
-            
-            req.on('response', res => {
-                var httpErr = null;
-                if (res.statusCode !== 200 && res.statusCode !== 201) {
-                    httpErr = 'HTTP log shipping failed: ' + res.statusCode;
+            const sendRequest = (batch, bytes) => {
+                attempts++;
+                let requestFactory = this._endpoint.protocol === "https:" ? https : http;
+                let req = requestFactory.request({
+                    agent: this._httpAgent,
+                    headers: {
+                        "Content-Length": bytes,
+                    },
+                    path: this._endpoint.path,
+                    method: "POST"
+                });
+
+                req.on("socket", (socket) => {
+                    socket.on("timeout", () => {
+                        req.abort();
+                        if (attempts > this._maxRetries) {
+                            return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
+                        } else {
+                            return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                        }
+                    })
+                });
+
+                req.on('response', res => {
+                    var httpErr = null;
+                    if (res.statusCode !== 200 && res.statusCode !== 201) {
+                        httpErr = 'HTTP log shipping failed: ' + res.statusCode;
+                    }
+
+                    res.on('data', (buffer) => {
+                        let dataRaw = buffer.toString();
+
+                        if (this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw) {
+                            this._lastRemoteConfig = dataRaw;
+                            this._onRemoteConfigChange(JSON.parse(dataRaw));
+                        }
+                    });
+
+                    res.on('error', e => {
+                        return reject(e);
+                    });
+                    res.on('end', () => {
+                        if (httpErr !== null) {
+                            if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
+                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                            }
+                            return reject(httpErr);
+                        } else {
+                            return resolve(true);
+                        }
+                    });
+                });
+
+                req.on('error', e => {
+                    return reject(e);
+                });
+
+                req.write(HEADER);
+                var delim = "";
+                for (var b = 0; b < batch.length; b++) {
+                    req.write(delim);
+                    delim = ",";
+                    req.write(batch[b]);
                 }
-                
-                res.on('data', (buffer) => {
-                    let dataRaw = buffer.toString(); 
-
-                    if(this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw){
-                        this._lastRemoteConfig = dataRaw;
-                        this._onRemoteConfigChange(JSON.parse(dataRaw));
-                    }
-                });           
-
-                res.on('error', e => {
-                    reject(e);
-                });
-                res.on('end', () => {
-                    if (httpErr !== null) {
-                        reject(httpErr);
-                    } else {
-                        resolve(true); 
-                    }
-                });
-            });
-            
-            req.on('error', e => {
-                reject(e);
-            });
-
-            req.write(HEADER);           
-            var delim = ""; 
-            for (var b = 0; b < batch.length; b++) {
-                req.write(delim);
-                delim = ",";
-                req.write(batch[b]);
+                req.write(FOOTER);
+                req.end();
             }
-            req.write(FOOTER);
-            req.end();
+
+            return sendRequest(batch, bytes);
         });
     }
 
