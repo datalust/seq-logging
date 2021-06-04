@@ -47,6 +47,19 @@ class SeqLogger {
         this._activeShipper = null;
         this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
         this._lastRemoteConfig = null;
+
+        this._httpAgent = new http.Agent({
+            keepAlive: true,
+            host: this._endpoint.hostname,
+            port: this._endpoint.port,
+            protocol: this._endpoint.protocol,
+            headers: {
+                "Content-Type": "application/json",
+                "X-Seq-ApiKey": this.apiKey ? this._apiKey : null,
+            },
+            timeout: this._requestTimeout,
+            maxTotalSockets: 25, // recommendation from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
+        });
     }
 
     // Flush events queued at the time of the call, and wait for pending writes to complete
@@ -93,8 +106,9 @@ class SeqLogger {
         
         this._closed = true;
         this._clearTimer();
-        
-        return this.flush();
+        return this.flush().then(() => {
+            this._httpAgent.destroy();
+        });
     }
 
     // Enqueue an event in Seq format.
@@ -252,26 +266,15 @@ class SeqLogger {
     
     _post(batch, bytes) {
         return new Promise((resolve, reject) => {
-            var opts = {
-                host: this._endpoint.hostname,
-                port: this._endpoint.port,
-                path: this._endpoint.path,
-                protocol: this._endpoint.protocol,
-                method: 'POST',
+            let requestFactory = this._endpoint.protocol === "https:" ? https : http;
+            let req = requestFactory.request({
+                agent: this._httpAgent,
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': bytes
+                    "Content-Length": bytes,
                 },
-                timeout: this._requestTimeout
-            };
-            
-            if (this._apiKey) {
-                opts.headers["X-Seq-ApiKey"] = this._apiKey;
-            }
-
-            let requestFactory = opts.protocol === 'https:' ? https : http;
-            let req = requestFactory.request(opts);
-
+                path: this._endpoint.path,
+                method: "POST"
+            });
             req.on("socket", (socket) => {
                 socket.on("timeout", () => {
                     req.abort();
