@@ -55,14 +55,6 @@ class SeqLogger {
 
         this._httpAgent = new http.Agent({
             keepAlive: true,
-            host: this._endpoint.hostname,
-            port: this._endpoint.port,
-            protocol: this._endpoint.protocol,
-            headers: {
-                "Content-Type": "application/json",
-                "X-Seq-ApiKey": this.apiKey ? this._apiKey : null,
-            },
-            timeout: this._requestTimeout,
             maxTotalSockets: 25, // recommendation from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
         });
     }
@@ -282,12 +274,18 @@ class SeqLogger {
                 attempts++;
                 let requestFactory = this._endpoint.protocol === "https:" ? https : http;
                 let req = requestFactory.request({
+                    host: this._endpoint.hostname,
+                    port: this._endpoint.port,
+                    path: this._endpoint.path,
+                    protocol: this._endpoint.protocol,
                     agent: this._httpAgent,
                     headers: {
+                        "Content-Type": "application/json",
+                        "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
                         "Content-Length": bytes,
                     },
-                    path: this._endpoint.path,
-                    method: "POST"
+                    method: "POST",
+                    timeout: this._requestTimeout
                 });
 
                 req.on("socket", (socket) => {
