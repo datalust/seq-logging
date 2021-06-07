@@ -103,7 +103,7 @@ class SeqLogger {
         return navigator.sendBeacon(beaconUrl, data);
     }
 
-    // Flush then destory connections, close the logger, destroying timers and other resources.
+    // Flush then destroy connections, close the logger, destroying timers and other resources.
     close() {
         if (this._closed) {
             throw new Error('The logger has already been closed.');
