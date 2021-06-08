@@ -5,6 +5,8 @@ export interface SeqLoggerConfig {
   eventSizeLimit?: number;
   batchSizeLimit?: number;
   requestTimeout?: number;
+  maxRetries?: number;
+  retryDelay?: number;
   onError: (e: Error) => void;
   onRemoteConfigChange?: (remoteConfig: RemoteConfig) => void;
 }

@@ -2,6 +2,7 @@
 
 let assert = require('assert');
 let simple = require('simple-mock');
+const http = require("http");
 let SeqLogger = require('../seq_logger');
 
 describe('SeqLogger', () => {
@@ -14,15 +15,19 @@ describe('SeqLogger', () => {
          assert.equal(logger._endpoint.protocol, 'http:');
          assert.equal(logger._endpoint.path, '/api/events/raw');         
          assert.equal(logger._apiKey, null);
+         assert.equal(logger._maxRetries, 5);
+         assert.equal(logger._retryDelay, 5000);
       });
       
       it('uses configuration arguments that are provided', () => {
-         let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
+         let logger = new SeqLogger({ serverUrl: 'https://my-seq/prd', apiKey: '12345', maxRetries: 10, retryDelay: 10000 });
          assert.equal(logger._endpoint.hostname, 'my-seq'); 
          assert.equal(logger._endpoint.port, null); 
          assert.equal(logger._endpoint.protocol, 'https:');
          assert.equal(logger._endpoint.path, '/prd/api/events/raw');         
          assert.equal(logger._apiKey, '12345');
+         assert.equal(logger._maxRetries, 10);
+         assert.equal(logger._retryDelay, 10000);
       });
       
       it('correctly formats slashed paths', () => {
@@ -30,7 +35,7 @@ describe('SeqLogger', () => {
          assert.equal(logger._endpoint.path, '/prd/api/events/raw');         
       });
    });
-   
+
    describe('emit()', () => {
       it('detects missing event', () => {
           let logger = new SeqLogger();
@@ -123,7 +128,65 @@ describe('SeqLogger', () => {
             simple.restore();
        });
    });
+    describe("_post()", function () {
+        it("retries 5 times after 5xx response from seq server", async () => {
+            const mockSeq = new MockSeq();
+            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+            const event = makeTestEvent();
+
+            mockSeq.status = 500;
+            logger.emit(event);
+            await logger.flush();
+            assert.equal(mockSeq.requestCount, 5);
+            await logger.close().then(() => {
+                mockSeq.close();
+            });
+        });
+
+        it("does not retry on 4xx responses", async () => {
+            const mockSeq = new MockSeq();
+            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+            const event = makeTestEvent();
+
+            mockSeq.status = 400;
+            logger.emit(event);
+            await logger.flush();
+            assert.equal(mockSeq.requestCount, 1);
+            await logger.close().then(() => {
+                mockSeq.close();
+            });
+        });
+
+        it("retries the amount of times set in configuration", async () => {
+            const mockSeq = new MockSeq();
+            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
+            const event = makeTestEvent();
+
+            mockSeq.status = 503;
+            logger.emit(event);
+            await logger.flush();
+            assert.equal(mockSeq.requestCount, 7);
+            await logger.close().then(() => {
+                mockSeq.close();
+            });
+        });
+
+
+    });
 });
+
+class MockSeq extends http.Server {
+    constructor() {
+        super((_, res) => {
+            res.statusCode = this.status;
+            this.requestCount++;
+            res.end()
+        });
+        this.status = 200;
+        this.requestCount = 0;
+        this.listen(3000, "localhost");
+    }
+}
 
 function makeTestEvent() {
     return {
