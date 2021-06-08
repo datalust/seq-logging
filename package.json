@@ -1,6 +1,6 @@
 {
   "name": "seq-logging",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
   "keywords": [
     "seq",
@@ -13,16 +13,16 @@
   },
   "author": "Datalust and contributors",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/continuousit/seq-logging",
+  "homepage": "https://github.com/datalust/seq-logging",
   "repository": {
     "type": "git",
-    "url": "https://github.com/continuousit/seq-logging.git"
+    "url": "https://github.com/datalust/seq-logging.git"
   },
   "devDependencies": {
-    "mocha": "^7.2.0",
+    "mocha": "^9.0.0",
     "nyc": "^15.1.0",
     "simple-mock": "^0.8.0",
-    "superagent": "^3.8.3",
-    "uuid": "^3.3.2"
+    "superagent": "^6.1.0",
+    "uuid": "^8.3.2"
   }
 }
