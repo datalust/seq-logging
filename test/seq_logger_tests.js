@@ -15,19 +15,19 @@ describe('SeqLogger', () => {
          assert.equal(logger._endpoint.protocol, 'http:');
          assert.equal(logger._endpoint.path, '/api/events/raw');         
          assert.equal(logger._apiKey, null);
-            assert.equal(logger._maxRetries, 5);
-            assert.equal(logger._retryDelay, 5000);
+         assert.equal(logger._maxRetries, 5);
+         assert.equal(logger._retryDelay, 5000);
       });
       
       it('uses configuration arguments that are provided', () => {
-            let logger = new SeqLogger({ serverUrl: 'https://my-seq/prd', apiKey: '12345', maxRetries: 10, retryDelay: 10000 });
+         let logger = new SeqLogger({ serverUrl: 'https://my-seq/prd', apiKey: '12345', maxRetries: 10, retryDelay: 10000 });
          assert.equal(logger._endpoint.hostname, 'my-seq'); 
          assert.equal(logger._endpoint.port, null); 
          assert.equal(logger._endpoint.protocol, 'https:');
          assert.equal(logger._endpoint.path, '/prd/api/events/raw');         
          assert.equal(logger._apiKey, '12345');
-            assert.equal(logger._maxRetries, 10);
-            assert.equal(logger._retryDelay, 10000);
+         assert.equal(logger._maxRetries, 10);
+         assert.equal(logger._retryDelay, 10000);
       });
       
       it('correctly formats slashed paths', () => {
