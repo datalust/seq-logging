@@ -23,7 +23,7 @@ export default (message) => {
 
             if (next !== null) {
                 next();
-                update = null;
+                next = null;
             }
         }, 3000);
     }
