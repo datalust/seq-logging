@@ -1,6 +1,6 @@
-# Seq Logging for JavaScript [![Build status](https://ci.appveyor.com/api/projects/status/j579f7e7dpdo91u7?svg=true)](https://ci.appveyor.com/project/datalust/seq-logging) [![NPM](https://img.shields.io/npm/v/seq-logging.svg)](https://www.npmjs.com/package/seq-logging)
+# Seq Logging for JavaScript ![Build](https://github.com/datalust/seq-logging/workflows/Test/badge.svg) ![Publish](https://github.com/datalust/seq-logging/workflows/Publish/badge.svg) [![NPM](https://img.shields.io/npm/v/seq-logging.svg)](https://www.npmjs.com/package/seq-logging)
 
-> This library makes it easy to support Seq from Node.js logging libraries, including [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), and [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq). It is not expected that applications will interact directly with this package.
+> This library makes it easy to support Seq from Node.js logging libraries, including [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq), and [Ts.ED logger](https://logger.tsed.io) via [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html). It is not expected that applications will interact directly with this package.
 
 ### Usage
 
@@ -37,3 +37,4 @@ When logging from a browser, and the application is being navigated away or clos
  * [bunyan-seq](https://github.com/datalust/bunyan-seq) - collect events from the Buyan logging framework
  * [pino-seq](https://github.com/datalust/pino-seq) - A stream to send Pino events to Seq
  * [winston-seq](https://github.com/SuperPaintman/winston-seq) - A Seq transport for Winston
+ * [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html) - A Seq transport for Ts.ED logger
