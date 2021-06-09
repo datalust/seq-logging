@@ -4,8 +4,6 @@ context('The app', () => {
     });
 
     it('logs to Seq', () => {
-        cy.get('#status').should('have.text', 'Use the button to log an event to Seq');
-
         cy.get('#log-event').click();
 
         cy.get('#status').should('have.text', 'Logging an event...');
