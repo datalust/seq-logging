@@ -142,9 +142,9 @@ class SeqLogger {
         const level = typeof event.level === 'string' ? event.level : undefined;
         const timestamp = event.timestamp instanceof Date ? event.timestamp : new Date();
         const messageTemplate = typeof event.messageTemplate === 'string' ? event.messageTemplate :
-            event.messageTemplate ? event.messageTemplate.toString() : "(No message provided)";
+            event.messageTemplate !== null && event.messageTemplate !== undefined ? event.messageTemplate.toString() : "(No message provided)";
         const exception = typeof event.exception === 'string' ? event.exception :
-            event.exception ? event.exception.toString() : undefined;
+            event.exception !== null && event.exception !== undefined ? event.exception.toString() : undefined;
         const properties = typeof event.properties === 'object' ? event.properties : undefined;
         return {
             Timestamp: timestamp,
