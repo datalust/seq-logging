@@ -4,15 +4,6 @@ let http = require('http');
 let https = require('https');
 let url = require('url');
 
-const LEVELS = {
-    "Verbose": "Verbose",
-    "Debug": "Debug",
-    "Information" : "Information",
-    "Warning": "Warning",
-    "Error": "Error",
-    "Fatal": "Fatal"
-};
-
 const HEADER = "{Events:[";
 const FOOTER = "]}";
 const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLength(FOOTER, 'utf8');
@@ -148,12 +139,19 @@ class SeqLogger {
     }
 
     _toWireFormat(event) {
+        const level = typeof event.level === 'string' ? event.level : undefined;
+        const timestamp = event.timestamp instanceof Date ? event.timestamp : new Date();
+        const messageTemplate = typeof event.messageTemplate === 'string' ? event.messageTemplate :
+            event.messageTemplate !== null && event.messageTemplate !== undefined ? event.messageTemplate.toString() : "(No message provided)";
+        const exception = typeof event.exception === 'string' ? event.exception :
+            event.exception !== null && event.exception !== undefined ? event.exception.toString() : undefined;
+        const properties = typeof event.properties === 'object' ? event.properties : undefined;
         return {
-            Timestamp: event.timestamp || new Date(),
-            Level: LEVELS[event.level], // Missing is fine
-            MessageTemplate: event.messageTemplate || "(No message provided)",
-            Exception: event.exception, // Missing is fine
-            Properties: event.properties // Missing is fine
+            Timestamp: timestamp,
+            Level: level,
+            MessageTemplate: messageTemplate,
+            Exception: exception,
+            Properties: properties
         };
     }
     
