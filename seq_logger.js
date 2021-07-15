@@ -12,7 +12,7 @@ const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLengt
 class SeqLogger {
     constructor(config) {
         let dflt = {
-            serverUrl: 'http://localhost:5341', 
+            serverUrl: 'http://localhost:5341',
             apiKey: null,
             maxBatchingTime: 2000,
             eventSizeLimit: 256 * 1024,
@@ -28,7 +28,7 @@ class SeqLogger {
             serverUrl += '/';
         }
         this._endpoint = url.parse(serverUrl + 'api/events/raw');
-        this._apiKey = cfg.apiKey || dflt.apiKey;    
+        this._apiKey = cfg.apiKey || dflt.apiKey;
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
         this._batchSizeLimit = cfg.batchSizeLimit || dflt.batchSizeLimit;
@@ -50,18 +50,21 @@ class SeqLogger {
         });
     }
 
-    // Flush events queued at the time of the call, and wait for pending writes to complete
-    // regardless of configured batching/timers.
-    flush() {
+    /**
+     * Flush events queued at the time of the call, and wait for pending writes to complete regardless of configured batching/timers.
+     * @returns {Promise<boolean}
+     */
+    flush () {
         return this._ship();
     }
 
-    // A browser only function that queues events for sending using the
-    // navigator.sendBeacon() API.  This may work in an unload or pagehide event
-    // handler when a normal flush() would not.
-    // Events over 63K in length are discarded (with a warning sent in its place) 
-    // and the total size batch will be no more than 63K in length.
-    flushToBeacon() {
+    /**
+     * * A browser only function that queues events for sending using the navigator.sendBeacon() API.    
+     * * This may work in an unload or pagehide event handler when a normal flush() would not.    
+     * * Events over 63K in length are discarded (with a warning sent in its place) and the total size batch will be no more than 63K in length.
+     * @returns {boolean} 
+     */
+    flushToBeacon () {
         if (this._queue.length === 0) {
             return false;
         }
@@ -80,18 +83,21 @@ class SeqLogger {
         this._batchSizeLimit = currentBatchSizeLimit;
         this._eventSizeLimit = currentEventSizeLimit;
 
-        const {dataParts, options, beaconUrl, size} = this._prepForBeacon(dequeued);
+        const { dataParts, options, beaconUrl, size } = this._prepForBeacon(dequeued);
 
         const data = new Blob(dataParts, options);
         return navigator.sendBeacon(beaconUrl, data);
     }
 
-    // Flush then destroy connections, close the logger, destroying timers and other resources.
-    close() {
+    /**
+     * Flush then destroy connections, close the logger, destroying timers and other resources.
+     * @returns {Promise<void>}
+     */
+    close () {
         if (this._closed) {
             throw new Error('The logger has already been closed.');
         }
-        
+
         this._closed = true;
         this._clearTimer();
         return this.flush().then(() => {
@@ -99,8 +105,12 @@ class SeqLogger {
         });
     }
 
-    // Enqueue an event in Seq format.
-    emit(event) {
+    /**
+     * Enqueue an event in Seq format.
+     * @param {*} event 
+     * @returns {void}
+     */
+    emit (event) {
         if (!event) {
             throw new Error('An event must be provided');
         }
@@ -114,31 +124,31 @@ class SeqLogger {
         }
     }
 
-    _setTimer() {
+    _setTimer () {
         if (this._timer !== null) {
             return;
         }
-        
+
         this._timer = setTimeout(() => {
             this._timer = null;
             this._onTimer();
         }, this._maxBatchingTime);
     }
-    
-    _clearTimer() {
+
+    _clearTimer () {
         if (this._timer !== null) {
             clearTimeout(this._timer);
             this._timer = null;
         }
     }
 
-    _onTimer() {
+    _onTimer () {
         if (!this._activeShipper) {
             this._ship();
         }
     }
 
-    _toWireFormat(event) {
+    _toWireFormat (event) {
         const level = typeof event.level === 'string' ? event.level : undefined;
         const timestamp = event.timestamp instanceof Date ? event.timestamp : new Date();
         const messageTemplate = typeof event.messageTemplate === 'string' ? event.messageTemplate :
@@ -154,21 +164,21 @@ class SeqLogger {
             Properties: properties
         };
     }
-    
-    _eventTooLargeErrorEvent(event) {
+
+    _eventTooLargeErrorEvent (event) {
         return {
             Timestamp: event.Timestamp,
             Level: event.Level,
             MessageTemplate: "(Event too large) {initial}...",
             Properties: {
                 initial: event.MessageTemplate.substring(0, 12),
-                sourceContext: "Seq Javascript Client", 
+                sourceContext: "Seq Javascript Client",
                 eventSizeLimit: this._eventSizeLimit
             }
         };
     }
-    
-    _reset(shipper) {
+
+    _reset (shipper) {
         if (this._activeShipper === shipper) {
             this._activeShipper = null;
             if (this._queue.length !== 0) {
@@ -176,12 +186,16 @@ class SeqLogger {
             }
         }
     }
-    
-    _ship() {
+
+    /**
+     * 
+     * @returns {Promise<boolean>}
+     */
+    _ship () {
         if (this._queue.length === 0) {
             return Promise.resolve(false);
         }
-        
+
         let wait = this._activeShipper || Promise.resolve(false);
         let shipper = this._activeShipper = wait
             .then(() => {
@@ -202,18 +216,18 @@ class SeqLogger {
 
         return shipper;
     }
-    
-    _sendBatch() {
+
+    _sendBatch () {
         if (this._queue.length === 0) {
             return Promise.resolve(true);
         }
 
         let dequeued = this._dequeBatch();
         let drained = this._queue.length === 0;
-        return this._post(dequeued.batch, dequeued.bytes).then(() => drained);        
+        return this._post(dequeued.batch, dequeued.bytes).then(() => drained);
     }
 
-    _dequeBatch() {
+    _dequeBatch () {
         var bytes = HEADER_FOOTER_BYTES;
         let batch = [];
         var i = 0;
@@ -224,7 +238,7 @@ class SeqLogger {
             try {
                 json = JSON.stringify(next);
             }
-            catch(e) {
+            catch (e) {
                 const cleaned = removeCirculars(next);
                 json = JSON.stringify(cleaned);
                 // Log that this event to be able to detect circular structures
@@ -242,29 +256,29 @@ class SeqLogger {
                 json = JSON.stringify(next);
                 jsonLen = Buffer.byteLength(json, 'utf8');
             }
-            
+
             // Always try to send a batch of at least one event, even if the batch size is
             // tiny.
             if (i !== 0 && bytes + jsonLen + delimSize > this._batchSizeLimit) {
                 break;
             }
-            
+
             i = i + 1;
             bytes += jsonLen + delimSize;
             delimSize = 1; // ","
             batch.push(json);
         }
-        
+
         this._queue.splice(0, i);
-        return {batch, bytes};
+        return { batch, bytes };
     }
 
-    _httpOrNetworkError(res) {
+    _httpOrNetworkError (res) {
         const networkErrors = ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN', 'EBUSY'];
         return networkErrors.includes(res) || 500 <= res.statusCode && res.statusCode < 600;
     }
 
-    _post(batch, bytes) {
+    _post (batch, bytes) {
         let attempts = 0;
 
         return new Promise((resolve, reject) => {
@@ -346,15 +360,15 @@ class SeqLogger {
         });
     }
 
-    _prepForBeacon(dequeued) {        
-        const {batch, bytes} = dequeued;
+    _prepForBeacon (dequeued) {
+        const { batch, bytes } = dequeued;
 
         const dataParts = [HEADER, batch.join(','), FOOTER];
 
         // CORS-safelisted for the Content-Type request header
-        const options = {type: 'text/plain'};
-        
-        const endpointWithKey = Object.assign({}, this._endpoint, {query: {'apiKey': this._apiKey}});
+        const options = { type: 'text/plain' };
+
+        const endpointWithKey = Object.assign({}, this._endpoint, { query: { 'apiKey': this._apiKey } });
 
         return {
             dataParts,
@@ -384,7 +398,7 @@ const removeCirculars = (obj, branch = new Map(), path = "root") => {
     else {
         branch.set(obj, path);
     }
-    
+
     if (obj instanceof Array) {
         return obj.map((value, i) =>
             isValue(value) ? value : removeCirculars(value, new Map(branch), path + `[${i}]`)
