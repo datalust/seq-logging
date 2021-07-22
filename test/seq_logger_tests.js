@@ -163,44 +163,50 @@ describe('SeqLogger', () => {
     describe("_post()", function () {
         it("retries 5 times after 5xx response from seq server", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
-            const event = makeTestEvent();
+            try {
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+                const event = makeTestEvent();
 
-            mockSeq.status = 500;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 5);
-            await logger.close().then(() => {
+                mockSeq.status = 500;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 5);
+                await logger.close();
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
         it("does not retry on 4xx responses", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
-            const event = makeTestEvent();
+            try {
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+                const event = makeTestEvent();
 
-            mockSeq.status = 400;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 1);
-            await logger.close().then(() => {
+                mockSeq.status = 400;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 1);
+                await logger.close();
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
         it("retries the amount of times set in configuration", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
-            const event = makeTestEvent();
-
-            mockSeq.status = 503;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 7);
-            await logger.close().then(() => {
+            try {
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
+                const event = makeTestEvent();
+    
+                mockSeq.status = 503;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 7);
+                await logger.close()
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
 
