@@ -19,7 +19,7 @@ export interface RemoteConfig {
 
 export interface SeqEvent {
   timestamp: Date
-  level?: SeqLogLevel
+  level?: string
   messageTemplate?: string
   properties?: object
   exception?: string
