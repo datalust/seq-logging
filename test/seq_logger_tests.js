@@ -145,7 +145,7 @@ describe('SeqLogger', () => {
            assert.strictEqual(sendBeacon.callCount, 1);
            assert.strictEqual(sendBeacon.lastCall.args[0], 'https://my-seq/prd/api/events/raw?apiKey=12345');
            assert.strictEqual(sendBeacon.lastCall.args[1].type, 'text/plain');
-           assert.strictEqual(sendBeacon.lastCall.args[1].size, 166);
+           assert.strictEqual(sendBeacon.lastCall.args[1].size, 168);
        });
 
        it('does handle event properties with circular structures', () => {
