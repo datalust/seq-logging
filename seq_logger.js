@@ -4,7 +4,7 @@ let http = require('http');
 let https = require('https');
 let url = require('url');
 
-const HEADER = "{Events:[";
+const HEADER = '{"Events":[';
 const FOOTER = "]}";
 const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLength(FOOTER, 'utf8');
 
@@ -44,7 +44,8 @@ class SeqLogger {
         this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
         this._lastRemoteConfig = null;
 
-        this._httpAgent = new http.Agent({
+        this._httpModule = this._endpoint.protocol === "https:" ? https : http
+        this._httpAgent = new this._httpModule.Agent({
             keepAlive: true,
             maxTotalSockets: 25, // recommendation from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
         });
@@ -52,7 +53,7 @@ class SeqLogger {
 
     /**
      * Flush events queued at the time of the call, and wait for pending writes to complete regardless of configured batching/timers.
-     * @returns {Promise<boolean}
+     * @returns {Promise<boolean>}
      */
     flush () {
         return this._ship();
@@ -284,8 +285,7 @@ class SeqLogger {
         return new Promise((resolve, reject) => {
             const sendRequest = (batch, bytes) => {
                 attempts++;
-                let requestFactory = this._endpoint.protocol === "https:" ? https : http;
-                let req = requestFactory.request({
+                let req = this._httpModule.request({
                     host: this._endpoint.hostname,
                     port: this._endpoint.port,
                     path: this._endpoint.path,
