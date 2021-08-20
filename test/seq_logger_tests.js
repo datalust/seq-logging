@@ -164,6 +164,7 @@ describe('SeqLogger', () => {
         it("retries 5 times after 5xx response from seq server", async () => {
             const mockSeq = new MockSeq();
             try {
+                await mockSeq.ready;
                 const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
                 const event = makeTestEvent();
 
@@ -180,6 +181,7 @@ describe('SeqLogger', () => {
         it("does not retry on 4xx responses", async () => {
             const mockSeq = new MockSeq();
             try {
+                await mockSeq.ready;
                 const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
                 const event = makeTestEvent();
 
@@ -196,6 +198,7 @@ describe('SeqLogger', () => {
         it("retries the amount of times set in configuration", async () => {
             const mockSeq = new MockSeq();
             try {
+                await mockSeq.ready;
                 const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
                 const event = makeTestEvent();
     
@@ -222,7 +225,11 @@ class MockSeq extends http.Server {
         });
         this.status = 200;
         this.requestCount = 0;
-        this.listen(3000, "localhost");
+        this.ready = new Promise((resolve, reject) => {
+            this.listen(3000, "localhost")
+              .once('listening', resolve)
+              .once('error', reject);
+          });
     }
 }
 
