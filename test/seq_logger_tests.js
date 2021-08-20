@@ -145,7 +145,7 @@ describe('SeqLogger', () => {
            assert.strictEqual(sendBeacon.callCount, 1);
            assert.strictEqual(sendBeacon.lastCall.args[0], 'https://my-seq/prd/api/events/raw?apiKey=12345');
            assert.strictEqual(sendBeacon.lastCall.args[1].type, 'text/plain');
-           assert.strictEqual(sendBeacon.lastCall.args[1].size, 166);
+           assert.strictEqual(sendBeacon.lastCall.args[1].size, 168);
        });
 
        it('does handle event properties with circular structures', () => {
@@ -163,44 +163,53 @@ describe('SeqLogger', () => {
     describe("_post()", function () {
         it("retries 5 times after 5xx response from seq server", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
-            const event = makeTestEvent();
+            try {
+                await mockSeq.ready;
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+                const event = makeTestEvent();
 
-            mockSeq.status = 500;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 5);
-            await logger.close().then(() => {
+                mockSeq.status = 500;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 5);
+                await logger.close();
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
         it("does not retry on 4xx responses", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
-            const event = makeTestEvent();
+            try {
+                await mockSeq.ready;
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+                const event = makeTestEvent();
 
-            mockSeq.status = 400;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 1);
-            await logger.close().then(() => {
+                mockSeq.status = 400;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 1);
+                await logger.close();
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
         it("retries the amount of times set in configuration", async () => {
             const mockSeq = new MockSeq();
-            const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
-            const event = makeTestEvent();
-
-            mockSeq.status = 503;
-            logger.emit(event);
-            await logger.flush();
-            assert.strictEqual(mockSeq.requestCount, 7);
-            await logger.close().then(() => {
+            try {
+                await mockSeq.ready;
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
+                const event = makeTestEvent();
+    
+                mockSeq.status = 503;
+                logger.emit(event);
+                await logger.flush();
+                assert.strictEqual(mockSeq.requestCount, 7);
+                await logger.close()
+            } finally {
                 mockSeq.close();
-            });
+            }
         });
 
 
@@ -216,7 +225,11 @@ class MockSeq extends http.Server {
         });
         this.status = 200;
         this.requestCount = 0;
-        this.listen(3000, "localhost");
+        this.ready = new Promise((resolve, reject) => {
+            this.listen(3000, "localhost")
+              .once('listening', resolve)
+              .once('error', reject);
+          });
     }
 }
 
