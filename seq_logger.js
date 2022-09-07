@@ -301,14 +301,16 @@ class SeqLogger {
                 });
 
                 req.on("socket", (socket) => {
-                    socket.on("timeout", () => {
-                        req.abort();
-                        if (attempts > this._maxRetries) {
-                            return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
-                        } else {
-                            return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                        }
-                    })
+                    if (socket.listeners("timeout").length == 0) {
+                        socket.on("timeout", () => {
+                            req.destroy();
+                            if (attempts > this._maxRetries) {
+                                return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
+                            } else {
+                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                            }
+                        });
+                    }
                 });
 
                 req.on('response', res => {
