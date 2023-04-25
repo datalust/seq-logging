@@ -1,18 +1,15 @@
 "use strict";
 
-let http = require('http');
-let https = require('https');
-let url = require('url');
-
+const NodeBlob = require('buffer').Blob
+const GlobalBlob = Blob !== undefined ? Blob : NodeBlob
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
-const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLength(FOOTER, 'utf8');
-
+const HEADER_FOOTER_BYTES = (new GlobalBlob([HEADER])).size + (new GlobalBlob([FOOTER])).size
 
 class SeqLogger {
     constructor(config) {
         let dflt = {
-            serverUrl: 'http://localhost:5341',
+            serverUrl: 'http://seq:5341',
             apiKey: null,
             maxBatchingTime: 2000,
             eventSizeLimit: 256 * 1024,
@@ -27,7 +24,7 @@ class SeqLogger {
         if (!serverUrl.endsWith('/')) {
             serverUrl += '/';
         }
-        this._endpoint = url.parse(serverUrl + 'api/events/raw');
+        this._endpoint = serverUrl + 'api/events/raw';
         this._apiKey = cfg.apiKey || dflt.apiKey;
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
@@ -43,12 +40,6 @@ class SeqLogger {
         this._activeShipper = null;
         this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
         this._lastRemoteConfig = null;
-
-        this._httpModule = this._endpoint.protocol === "https:" ? https : http
-        this._httpAgent = new this._httpModule.Agent({
-            keepAlive: true,
-            maxTotalSockets: 25, // recommendation from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
-        });
     }
 
     /**
@@ -250,12 +241,12 @@ class SeqLogger {
                     messageTemplate: "[seq] Circular structure found"
                 });
             }
-            var jsonLen = Buffer.byteLength(json, 'utf8');
+            var jsonLen = new GlobalBlob([json]).size;
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
                 this._queue[i] = next = this._eventTooLargeErrorEvent(next);
                 json = JSON.stringify(next);
-                jsonLen = Buffer.byteLength(json, 'utf8');
+                jsonLen = new GlobalBlob([json]).size;
             }
 
             // Always try to send a batch of at least one event, even if the batch size is
@@ -285,77 +276,48 @@ class SeqLogger {
         return new Promise((resolve, reject) => {
             const sendRequest = (batch, bytes) => {
                 attempts++;
-                let req = this._httpModule.request({
-                    host: this._endpoint.hostname,
-                    port: this._endpoint.port,
-                    path: this._endpoint.path,
-                    protocol: this._endpoint.protocol,
-                    agent: this._httpAgent,
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
-                        "Content-Length": bytes,
-                    },
-                    method: "POST",
-                    timeout: this._requestTimeout
-                });
-
-                req.on("socket", (socket) => {
-                    if (socket.listeners("timeout").length == 0) {
-                        socket.on("timeout", () => {
-                            req.destroy();
-                            if (attempts > this._maxRetries) {
-                                return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
-                            } else {
-                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                            }
-                        });
-                    }
-                });
-
-                req.on('response', res => {
-                    var httpErr = null;
-                    if (res.statusCode !== 200 && res.statusCode !== 201) {
+                // TODO: add `timeout` with `AbortController` and `signal`
+                fetch(this._endpoint, {
+                  keepalive: true,
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
+                    "Content-Length": bytes,
+                  },
+                  body: `${HEADER}${batch.join(',')}${FOOTER}`
+                })
+                  .then((res) => {
+                    let httpErr = null;
+                    if (res.status !== 200 && res.status !== 201) {
                         httpErr = 'HTTP log shipping failed: ' + res.statusCode;
                     }
-
-                    res.on('data', (buffer) => {
-                        let dataRaw = buffer.toString();
-
-                        if (this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw) {
-                            this._lastRemoteConfig = dataRaw;
-                            this._onRemoteConfigChange(JSON.parse(dataRaw));
+                    if (httpErr !== null) {
+                        if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
+                            return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                         }
-                    });
-
-                    res.on('error', e => {
-                        return reject(e);
-                    });
-                    res.on('end', () => {
-                        if (httpErr !== null) {
-                            if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
-                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                            }
-                            return reject(httpErr);
-                        } else {
-                            return resolve(true);
-                        }
-                    });
-                });
-
-                req.on('error', e => {
-                    return reject(e);
-                });
-
-                req.write(HEADER);
-                var delim = "";
-                for (var b = 0; b < batch.length; b++) {
-                    req.write(delim);
-                    delim = ",";
-                    req.write(batch[b]);
-                }
-                req.write(FOOTER);
-                req.end();
+                        return reject(httpErr);
+                    } else {
+                        return resolve(true);
+                    }
+                  })
+                  .catch((err) => {
+                    console.log('logger error', err);
+                    reject(err);
+                  })
+                // TODO: not migrated yet
+                // req.on("socket", (socket) => {
+                //     if (socket.listeners("timeout").length == 0) {
+                //         socket.on("timeout", () => {
+                //             req.destroy();
+                //             if (attempts > this._maxRetries) {
+                //                 return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
+                //             } else {
+                //                 return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                //             }
+                //         });
+                //     }
+                // });
             }
 
             return sendRequest(batch, bytes);
@@ -369,8 +331,7 @@ class SeqLogger {
 
         // CORS-safelisted for the Content-Type request header
         const options = { type: 'text/plain' };
-
-        const endpointWithKey = Object.assign({}, this._endpoint, { query: { 'apiKey': this._apiKey } });
+        const endpointWithKey = Object.assign({}, new URL(this._endpoint), { query: { 'apiKey': this._apiKey } });
 
         return {
             dataParts,
