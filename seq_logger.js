@@ -9,7 +9,7 @@ const HEADER_FOOTER_BYTES = (new GlobalBlob([HEADER])).size + (new GlobalBlob([F
 class SeqLogger {
     constructor(config) {
         let dflt = {
-            serverUrl: 'http://seq:5341',
+            serverUrl: 'http://localhost:5341',
             apiKey: null,
             maxBatchingTime: 2000,
             eventSizeLimit: 256 * 1024,
@@ -275,8 +275,17 @@ class SeqLogger {
 
         return new Promise((resolve, reject) => {
             const sendRequest = (batch, bytes) => {
+                const controller = new AbortController()
                 attempts++;
-                // TODO: add `timeout` with `AbortController` and `signal`
+                const timerId = setTimeout(() => {
+                  controller.abort()
+                  if (attempts > this._maxRetries) {
+                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')            
+                  } else {
+                    setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                  }
+                }, this._requestTimeout)
+
                 fetch(this._endpoint, {
                   keepalive: true,
                   method: "POST",
@@ -285,9 +294,11 @@ class SeqLogger {
                     "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
                     "Content-Length": bytes,
                   },
-                  body: `${HEADER}${batch.join(',')}${FOOTER}`
+                  body: `${HEADER}${batch.join(',')}${FOOTER}`,
+                  signal: controller.signal,
                 })
                   .then((res) => {
+                    clearTimeout(timerId)
                     let httpErr = null;
                     if (res.status !== 200 && res.status !== 201) {
                         httpErr = 'HTTP log shipping failed: ' + res.statusCode;
@@ -302,22 +313,9 @@ class SeqLogger {
                     }
                   })
                   .catch((err) => {
-                    console.log('logger error', err);
+                    clearTimeout(timerId)
                     reject(err);
                   })
-                // TODO: not migrated yet
-                // req.on("socket", (socket) => {
-                //     if (socket.listeners("timeout").length == 0) {
-                //         socket.on("timeout", () => {
-                //             req.destroy();
-                //             if (attempts > this._maxRetries) {
-                //                 return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
-                //             } else {
-                //                 return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                //             }
-                //         });
-                //     }
-                // });
             }
 
             return sendRequest(batch, bytes);
