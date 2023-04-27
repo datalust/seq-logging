@@ -1,7 +1,8 @@
 "use strict";
 
-const NodeBlob = require('buffer').Blob
-const GlobalBlob = Blob !== undefined ? Blob : NodeBlob
+const GlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
+const fetchApi = typeof fetch === 'undefined' ? require('node-fetch') : fetch;
+
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
 const HEADER_FOOTER_BYTES = (new GlobalBlob([HEADER])).size + (new GlobalBlob([FOOTER])).size
