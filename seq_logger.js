@@ -1,8 +1,8 @@
 "use strict";
 
 const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
-const safeGlobalFetch = typeof fetch !== 'undefined' ? require('node-fetch') : fetch;
-const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? require('abort-controller') : AbortController
+const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
+const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
 
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
