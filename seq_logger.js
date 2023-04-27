@@ -1,11 +1,12 @@
 "use strict";
 
-const GlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
-const fetchApi = typeof fetch === 'undefined' ? require('node-fetch') : fetch;
+const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
+const safeGlobalFetch = typeof fetch !== 'undefined' ? require('node-fetch') : fetch;
+const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? require('abort-controller') : AbortController
 
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
-const HEADER_FOOTER_BYTES = (new GlobalBlob([HEADER])).size + (new GlobalBlob([FOOTER])).size
+const HEADER_FOOTER_BYTES = (new SafeGlobalBlob([HEADER])).size + (new SafeGlobalBlob([FOOTER])).size;
 
 class SeqLogger {
     constructor(config) {
@@ -240,12 +241,12 @@ class SeqLogger {
                     messageTemplate: "[seq] Circular structure found"
                 });
             }
-            var jsonLen = new GlobalBlob([json]).size;
+            var jsonLen = new SafeGlobalBlob([json]).size;
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
                 this._queue[i] = next = this._eventTooLargeErrorEvent(next);
                 json = JSON.stringify(next);
-                jsonLen = new GlobalBlob([json]).size;
+                jsonLen = new SafeGlobalBlob([json]).size;
             }
 
             // Always try to send a batch of at least one event, even if the batch size is
@@ -274,7 +275,7 @@ class SeqLogger {
 
         return new Promise((resolve, reject) => {
             const sendRequest = (batch, bytes) => {
-                const controller = new AbortController()
+                const controller = new SafeGlobalAbortController();
                 attempts++;
                 const timerId = setTimeout(() => {
                   controller.abort()
@@ -285,7 +286,7 @@ class SeqLogger {
                   }
                 }, this._requestTimeout)
 
-                fetch(this._endpoint, {
+                safeGlobalFetch(this._endpoint, {
                   keepalive: true,
                   method: "POST",
                   headers: {
