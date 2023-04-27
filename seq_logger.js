@@ -278,13 +278,13 @@ class SeqLogger {
                 const controller = new SafeGlobalAbortController();
                 attempts++;
                 const timerId = setTimeout(() => {
-                  controller.abort()
+                  controller.abort();
                   if (attempts > this._maxRetries) {
-                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')            
+                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)');           
                   } else {
                     setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                   }
-                }, this._requestTimeout)
+                }, this._requestTimeout);
 
                 safeGlobalFetch(this._endpoint, {
                   keepalive: true,
@@ -298,7 +298,7 @@ class SeqLogger {
                   signal: controller.signal,
                 })
                   .then((res) => {
-                    clearTimeout(timerId)
+                    clearTimeout(timerId);
                     let httpErr = null;
                     if (res.status !== 200 && res.status !== 201) {
                         httpErr = 'HTTP log shipping failed: ' + res.statusCode;
@@ -313,7 +313,7 @@ class SeqLogger {
                     }
                   })
                   .catch((err) => {
-                    clearTimeout(timerId)
+                    clearTimeout(timerId);
                     reject(err);
                   })
             }
