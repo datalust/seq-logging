@@ -1,8 +1,24 @@
 "use strict";
+var NodeBlob, NodeFetch, NodeAbortController
+try {
+  NodeBlob = require('buffer').Blob
+} catch (error) { 
+  console.log('missing buffer')
+}
+try {
+  NodeFetch = require('node-fetch')
+} catch (error) { 
+  console.log('missing node-fetch')
+}
+try {
+  NodeAbortController = require('abort-controller')
+} catch (error) { 
+  console.log('missing abort-controller')
+}
 
-const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
-const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
-const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
+const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : NodeBlob;
+const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : NodeFetch;
+const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : NodeAbortController;
 
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
