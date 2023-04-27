@@ -92,9 +92,7 @@ class SeqLogger {
 
         this._closed = true;
         this._clearTimer();
-        return this.flush().then(() => {
-            this._httpAgent.destroy();
-        });
+        return this.flush().then(() => {});
     }
 
     /**
