@@ -280,9 +280,8 @@ class SeqLogger {
                     clearTimeout(timerId);
                     let httpErr = null;
                     if (res.status !== 200 && res.status !== 201) {
-                        httpErr = 'HTTP log shipping failed: ' + res.statusCode;
+                        httpErr = 'HTTP log shipping failed: ' + res.status;
                         if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
-                            console.log('attempts | _maxRetries', attempts, this._maxRetries);
                             return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                         }
                         return reject(httpErr);
