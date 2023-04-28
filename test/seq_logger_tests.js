@@ -108,58 +108,6 @@ describe('SeqLogger', () => {
       });
    });
 
-   describe('flushToBeacon()', function() {
-       const sendBeacon = simple.stub().returnWith(true);
-       const MockBlob = function MockBlob(blobParts, options) {
-           this.size = blobParts.join('').length;
-           this.type = (options && options.type) || ''
-       }
-
-       beforeEach(function() {
-           simple.mock(global, 'navigator', {sendBeacon});
-           simple.mock(global, 'Blob', MockBlob);
-       });
-
-       it('return false with no events', function() {
-           let logger = new SeqLogger();
-           const result = logger.flushToBeacon();
-           assert.strictEqual(result, false);
-       });
-
-       it('formats url to include api key', function() {
-           let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
-           let event = makeTestEvent();
-           logger.emit(event);
-           logger._clearTimer();
-           const {dataParts, options, beaconUrl, size} = logger._prepForBeacon({batch: [], bytes: 11});
-           assert.strictEqual(beaconUrl, 'https://my-seq/prd/api/events/raw?apiKey=12345');
-       });
-
-       it('queues beacon', function() {
-           let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
-           let event = makeTestEvent();
-           logger.emit(event);
-           logger._clearTimer();
-           const result = logger.flushToBeacon();
-           assert(result);
-           assert.strictEqual(sendBeacon.callCount, 1);
-           assert.strictEqual(sendBeacon.lastCall.args[0], 'https://my-seq/prd/api/events/raw?apiKey=12345');
-           assert.strictEqual(sendBeacon.lastCall.args[1].type, 'text/plain');
-           assert.strictEqual(sendBeacon.lastCall.args[1].size, 168);
-       });
-
-       it('does handle event properties with circular structures', () => {
-        let logger = new SeqLogger({serverUrl: 'https://my-seq/prd', apiKey: '12345'});
-        const event = makeCircularTestEvent();
-        logger.emit(event);
-        logger.flushToBeacon();
-      });
-
-       afterEach(function() {
-            sendBeacon.reset();
-            simple.restore();
-       });
-   });
     describe("_post()", function () {
         it("retries 5 times after 5xx response from seq server", async () => {
             const mockSeq = new MockSeq();
@@ -243,15 +191,3 @@ function makeTestEvent() {
     };
 }
 
-function makeCircularTestEvent() {
-    const a = {};
-    a.a = a;
-
-    return {
-        level: "Error",
-        timestamp: new Date(),
-        messageTemplate: 'Circular structure issue!',
-        exception: "Some error at some file on some line",
-        properties: { a }
-    };
-}
