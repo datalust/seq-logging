@@ -10,10 +10,7 @@ describe('SeqLogger', () => {
    describe('constructor()', () => {
       it('defaults missing configuration arguments', () => {
          let logger = new SeqLogger();
-         assert.strictEqual(logger._endpoint.hostname, 'localhost'); 
-         assert.strictEqual(logger._endpoint.port, '5341'); 
-         assert.strictEqual(logger._endpoint.protocol, 'http:');
-         assert.strictEqual(logger._endpoint.path, '/api/events/raw');         
+         assert.strictEqual(logger._endpoint, 'http://localhost:5341/api/events/raw'); 
          assert.strictEqual(logger._apiKey, null);
          assert.strictEqual(logger._maxRetries, 5);
          assert.strictEqual(logger._retryDelay, 5000);
@@ -21,19 +18,12 @@ describe('SeqLogger', () => {
       
       it('uses configuration arguments that are provided', () => {
          let logger = new SeqLogger({ serverUrl: 'https://my-seq/prd', apiKey: '12345', maxRetries: 10, retryDelay: 10000 });
-         assert.strictEqual(logger._endpoint.hostname, 'my-seq'); 
-         assert.strictEqual(logger._endpoint.port, null); 
-         assert.strictEqual(logger._endpoint.protocol, 'https:');
-         assert.strictEqual(logger._endpoint.path, '/prd/api/events/raw');         
+         assert.strictEqual(logger._endpoint, 'https://my-seq/prd/api/events/raw'); 
          assert.strictEqual(logger._apiKey, '12345');
          assert.strictEqual(logger._maxRetries, 10);
          assert.strictEqual(logger._retryDelay, 10000);
       });
       
-      it('correctly formats slashed paths', () => {
-         let logger = new SeqLogger({serverUrl: 'https://my-seq/prd/'});
-         assert.strictEqual(logger._endpoint.path, '/prd/api/events/raw');         
-      });
    });
 
    describe('emit()', () => {
