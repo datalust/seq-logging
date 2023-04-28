@@ -4,6 +4,11 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     entry: './src/main.js',
+    resolve: {
+        fallback: {
+            "buffer": false
+        }
+    },
     plugins: [
         new HtmlWebpackPlugin({
             title: 'Logging to Seq via Browser'
