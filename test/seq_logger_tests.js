@@ -1,7 +1,6 @@
 "use strict";
 
 let assert = require('assert');
-let simple = require('simple-mock');
 const http = require("http");
 let SeqLogger = require('../seq_logger');
 
@@ -100,7 +99,7 @@ describe('SeqLogger', () => {
 
     describe("_post()", function () {
         it("retries 5 times after 5xx response from seq server", async () => {
-            const mockSeq = new MockSeq();
+            const mockSeq = new MockSeq(3000);
             try {
                 await mockSeq.ready;
                 const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
@@ -117,10 +116,10 @@ describe('SeqLogger', () => {
         });
 
         it("does not retry on 4xx responses", async () => {
-            const mockSeq = new MockSeq();
+            const mockSeq = new MockSeq(3001);
             try {
                 await mockSeq.ready;
-                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100 });
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3001', maxBatchingTime: 1, retryDelay: 100 });
                 const event = makeTestEvent();
 
                 mockSeq.status = 400;
@@ -134,10 +133,10 @@ describe('SeqLogger', () => {
         });
 
         it("retries the amount of times set in configuration", async () => {
-            const mockSeq = new MockSeq();
+            const mockSeq = new MockSeq(3002);
             try {
                 await mockSeq.ready;
-                const logger = new SeqLogger({ serverUrl: 'http://localhost:3000', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
+                const logger = new SeqLogger({ serverUrl: 'http://localhost:3002', maxBatchingTime: 1, retryDelay: 100, maxRetries: 7 });
                 const event = makeTestEvent();
     
                 mockSeq.status = 503;
@@ -155,7 +154,7 @@ describe('SeqLogger', () => {
 });
 
 class MockSeq extends http.Server {
-    constructor() {
+    constructor(port) {
         super((_, res) => {
             res.statusCode = this.status;
             this.requestCount++;
@@ -164,7 +163,7 @@ class MockSeq extends http.Server {
         this.status = 200;
         this.requestCount = 0;
         this.ready = new Promise((resolve, reject) => {
-            this.listen(3000, "localhost")
+            this.listen(port, "localhost")
               .once('listening', resolve)
               .once('error', reject);
           });
