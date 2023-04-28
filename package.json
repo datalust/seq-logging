@@ -22,7 +22,6 @@
   },
   "devDependencies": {
     "mocha": "^9.2.2",
-    "node-polyfill-webpack-plugin": "^1.1.4",
     "nyc": "^15.1.0",
     "simple-mock": "^0.8.0",
     "superagent": "^6.1.0",
