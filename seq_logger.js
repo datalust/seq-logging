@@ -79,7 +79,7 @@ class SeqLogger {
 
         this._closed = true;
         this._clearTimer();
-        return this.flush().then(() => {});
+        return this.flush();
     }
 
     /**
@@ -252,7 +252,7 @@ class SeqLogger {
 
     _httpOrNetworkError (res) {
         const networkErrors = ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN', 'EBUSY'];
-        return networkErrors.includes(res) || 500 <= res.statusCode && res.statusCode < 600;
+        return networkErrors.includes(res) || 500 <= res.status && res.status < 600;
     }
 
     _post (batch, bytes) {
@@ -287,15 +287,13 @@ class SeqLogger {
                     let httpErr = null;
                     if (res.status !== 200 && res.status !== 201) {
                         httpErr = 'HTTP log shipping failed: ' + res.statusCode;
-                    }
-                    if (httpErr !== null) {
                         if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
+                            console.log('attempts | _maxRetries', attempts, this._maxRetries);
                             return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                         }
                         return reject(httpErr);
-                    } else {
-                        return resolve(true);
                     }
+                    return resolve(true);
                   })
                   .catch((err) => {
                     clearTimeout(timerId);
