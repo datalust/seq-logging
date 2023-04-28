@@ -2,19 +2,13 @@
 var NodeBlob, NodeFetch, NodeAbortController
 try {
   NodeBlob = require('buffer').Blob
-} catch (error) { 
-  console.log('missing buffer')
-}
+} catch (e) {}
 try {
   NodeFetch = require('node-fetch')
-} catch (error) { 
-  console.log('missing node-fetch')
-}
+} catch (e) {}
 try {
   NodeAbortController = require('abort-controller')
-} catch (error) { 
-  console.log('missing abort-controller')
-}
+} catch (e) {}
 
 const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : NodeBlob;
 const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : NodeFetch;
