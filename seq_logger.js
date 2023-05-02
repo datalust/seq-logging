@@ -1,13 +1,12 @@
 "use strict";
 
-let http = require('http');
-let https = require('https');
-let url = require('url');
+const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
+const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
+const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
 
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
-const HEADER_FOOTER_BYTES = Buffer.byteLength(HEADER, 'utf8') + Buffer.byteLength(FOOTER, 'utf8');
-
+const HEADER_FOOTER_BYTES = (new SafeGlobalBlob([HEADER])).size + (new SafeGlobalBlob([FOOTER])).size;
 
 class SeqLogger {
     constructor(config) {
@@ -27,7 +26,7 @@ class SeqLogger {
         if (!serverUrl.endsWith('/')) {
             serverUrl += '/';
         }
-        this._endpoint = url.parse(serverUrl + 'api/events/raw');
+        this._endpoint = serverUrl + 'api/events/raw';
         this._apiKey = cfg.apiKey || dflt.apiKey;
         this._maxBatchingTime = cfg.maxBatchingTime || dflt.maxBatchingTime;
         this._eventSizeLimit = cfg.eventSizeLimit || dflt.eventSizeLimit;
@@ -43,12 +42,6 @@ class SeqLogger {
         this._activeShipper = null;
         this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
         this._lastRemoteConfig = null;
-
-        this._httpModule = this._endpoint.protocol === "https:" ? https : http
-        this._httpAgent = new this._httpModule.Agent({
-            keepAlive: true,
-            maxTotalSockets: 25, // recommendation from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/node-configuring-maxsockets.html
-        });
     }
 
     /**
@@ -57,37 +50,6 @@ class SeqLogger {
      */
     flush () {
         return this._ship();
-    }
-
-    /**
-     * * A browser only function that queues events for sending using the navigator.sendBeacon() API.    
-     * * This may work in an unload or pagehide event handler when a normal flush() would not.    
-     * * Events over 63K in length are discarded (with a warning sent in its place) and the total size batch will be no more than 63K in length.
-     * @returns {boolean} 
-     */
-    flushToBeacon () {
-        if (this._queue.length === 0) {
-            return false;
-        }
-
-        if (typeof navigator === 'undefined' || !navigator.sendBeacon || typeof Blob === 'undefined') {
-            return false;
-        }
-
-        const currentBatchSizeLimit = this._batchSizeLimit;
-        const currentEventSizeLimit = this._eventSizeLimit;
-        this._batchSizeLimit = Math.min(63 * 1024, this._batchSizeLimit);
-        this._eventSizeLimit = Math.min(63 * 1024, this._eventSizeLimit);
-
-        const dequeued = this._dequeBatch();
-
-        this._batchSizeLimit = currentBatchSizeLimit;
-        this._eventSizeLimit = currentEventSizeLimit;
-
-        const { dataParts, options, beaconUrl, size } = this._prepForBeacon(dequeued);
-
-        const data = new Blob(dataParts, options);
-        return navigator.sendBeacon(beaconUrl, data);
     }
 
     /**
@@ -101,9 +63,7 @@ class SeqLogger {
 
         this._closed = true;
         this._clearTimer();
-        return this.flush().then(() => {
-            this._httpAgent.destroy();
-        });
+        return this.flush();
     }
 
     /**
@@ -250,12 +210,12 @@ class SeqLogger {
                     messageTemplate: "[seq] Circular structure found"
                 });
             }
-            var jsonLen = Buffer.byteLength(json, 'utf8');
+            var jsonLen = new SafeGlobalBlob([json]).size;
             if (jsonLen > this._eventSizeLimit) {
                 this._onError("[seq] Event body is larger than " + this._eventSizeLimit + " bytes: " + json);
                 this._queue[i] = next = this._eventTooLargeErrorEvent(next);
                 json = JSON.stringify(next);
-                jsonLen = Buffer.byteLength(json, 'utf8');
+                jsonLen = new SafeGlobalBlob([json]).size;
             }
 
             // Always try to send a batch of at least one event, even if the batch size is
@@ -276,7 +236,7 @@ class SeqLogger {
 
     _httpOrNetworkError (res) {
         const networkErrors = ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN', 'EBUSY'];
-        return networkErrors.includes(res) || 500 <= res.statusCode && res.statusCode < 600;
+        return networkErrors.includes(res) || 500 <= res.status && res.status < 600;
     }
 
     _post (batch, bytes) {
@@ -284,100 +244,48 @@ class SeqLogger {
 
         return new Promise((resolve, reject) => {
             const sendRequest = (batch, bytes) => {
+                const controller = new SafeGlobalAbortController();
                 attempts++;
-                let req = this._httpModule.request({
-                    host: this._endpoint.hostname,
-                    port: this._endpoint.port,
-                    path: this._endpoint.path,
-                    protocol: this._endpoint.protocol,
-                    agent: this._httpAgent,
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
-                        "Content-Length": bytes,
-                    },
-                    method: "POST",
-                    timeout: this._requestTimeout
-                });
+                const timerId = setTimeout(() => {
+                  controller.abort();
+                  if (attempts > this._maxRetries) {
+                    reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)');           
+                  } else {
+                    setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
+                  }
+                }, this._requestTimeout);
 
-                req.on("socket", (socket) => {
-                    if (socket.listeners("timeout").length == 0) {
-                        socket.on("timeout", () => {
-                            req.destroy();
-                            if (attempts > this._maxRetries) {
-                                return reject('HTTP log shipping failed, reached timeout (' + this._requestTimeout + ' ms)')
-                            } else {
-                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                            }
-                        });
-                    }
-                });
-
-                req.on('response', res => {
-                    var httpErr = null;
-                    if (res.statusCode !== 200 && res.statusCode !== 201) {
-                        httpErr = 'HTTP log shipping failed: ' + res.statusCode;
-                    }
-
-                    res.on('data', (buffer) => {
-                        let dataRaw = buffer.toString();
-
-                        if (this._onRemoteConfigChange && this._lastRemoteConfig !== dataRaw) {
-                            this._lastRemoteConfig = dataRaw;
-                            this._onRemoteConfigChange(JSON.parse(dataRaw));
+                safeGlobalFetch(this._endpoint, {
+                  keepalive: true,
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "X-Seq-ApiKey": this._apiKey ? this._apiKey : null,
+                    "Content-Length": bytes,
+                  },
+                  body: `${HEADER}${batch.join(',')}${FOOTER}`,
+                  signal: controller.signal,
+                })
+                  .then((res) => {
+                    clearTimeout(timerId);
+                    let httpErr = null;
+                    if (res.status !== 200 && res.status !== 201) {
+                        httpErr = 'HTTP log shipping failed: ' + res.status;
+                        if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
+                            return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                         }
-                    });
-
-                    res.on('error', e => {
-                        return reject(e);
-                    });
-                    res.on('end', () => {
-                        if (httpErr !== null) {
-                            if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
-                                return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
-                            }
-                            return reject(httpErr);
-                        } else {
-                            return resolve(true);
-                        }
-                    });
-                });
-
-                req.on('error', e => {
-                    return reject(e);
-                });
-
-                req.write(HEADER);
-                var delim = "";
-                for (var b = 0; b < batch.length; b++) {
-                    req.write(delim);
-                    delim = ",";
-                    req.write(batch[b]);
-                }
-                req.write(FOOTER);
-                req.end();
+                        return reject(httpErr);
+                    }
+                    return resolve(true);
+                  })
+                  .catch((err) => {
+                    clearTimeout(timerId);
+                    reject(err);
+                  })
             }
 
             return sendRequest(batch, bytes);
         });
-    }
-
-    _prepForBeacon (dequeued) {
-        const { batch, bytes } = dequeued;
-
-        const dataParts = [HEADER, batch.join(','), FOOTER];
-
-        // CORS-safelisted for the Content-Type request header
-        const options = { type: 'text/plain' };
-
-        const endpointWithKey = Object.assign({}, this._endpoint, { query: { 'apiKey': this._apiKey } });
-
-        return {
-            dataParts,
-            options,
-            beaconUrl: url.format(endpointWithKey),
-            size: bytes,
-        };
     }
 }
 

@@ -1,6 +1,6 @@
 # Seq Logging for JavaScript ![Build](https://github.com/datalust/seq-logging/workflows/Test/badge.svg) ![Publish](https://github.com/datalust/seq-logging/workflows/Publish/badge.svg) [![NPM](https://img.shields.io/npm/v/seq-logging.svg)](https://www.npmjs.com/package/seq-logging)
 
-> This library makes it easy to support Seq from Node.js logging libraries, including [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq), and [Ts.ED logger](https://logger.tsed.io) via [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html). It is not expected that applications will interact directly with this package.
+> This library makes it easy to support Seq from Node.js logging libraries, including [Winston](https://github.com/winstonjs/winston) via [winston-seq](https://github.com/datalust/winston-seq), [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq), and [Ts.ED logger](https://logger.tsed.io) via [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html). It is not expected that applications will interact directly with this package.
 
 ### Usage
 
