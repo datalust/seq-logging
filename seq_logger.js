@@ -1,24 +1,8 @@
 "use strict";
-var NodeBlob, NodeFetch, NodeAbortController
-try {
-  NodeBlob = require('buffer').Blob
-} catch (error) { 
-  console.log('missing buffer')
-}
-try {
-  NodeFetch = require('node-fetch')
-} catch (error) { 
-  console.log('missing node-fetch')
-}
-try {
-  NodeAbortController = require('abort-controller')
-} catch (error) { 
-  console.log('missing abort-controller')
-}
 
-const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : NodeBlob;
-const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : NodeFetch;
-const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : NodeAbortController;
+const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
+const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
+const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
 
 const HEADER = '{"Events":[';
 const FOOTER = "]}";
@@ -69,37 +53,6 @@ class SeqLogger {
     }
 
     /**
-     * * A browser only function that queues events for sending using the navigator.sendBeacon() API.    
-     * * This may work in an unload or pagehide event handler when a normal flush() would not.    
-     * * Events over 63K in length are discarded (with a warning sent in its place) and the total size batch will be no more than 63K in length.
-     * @returns {boolean} 
-     */
-    flushToBeacon () {
-        if (this._queue.length === 0) {
-            return false;
-        }
-
-        if (typeof navigator === 'undefined' || !navigator.sendBeacon || typeof Blob === 'undefined') {
-            return false;
-        }
-
-        const currentBatchSizeLimit = this._batchSizeLimit;
-        const currentEventSizeLimit = this._eventSizeLimit;
-        this._batchSizeLimit = Math.min(63 * 1024, this._batchSizeLimit);
-        this._eventSizeLimit = Math.min(63 * 1024, this._eventSizeLimit);
-
-        const dequeued = this._dequeBatch();
-
-        this._batchSizeLimit = currentBatchSizeLimit;
-        this._eventSizeLimit = currentEventSizeLimit;
-
-        const { dataParts, options, beaconUrl, size } = this._prepForBeacon(dequeued);
-
-        const data = new Blob(dataParts, options);
-        return navigator.sendBeacon(beaconUrl, data);
-    }
-
-    /**
      * Flush then destroy connections, close the logger, destroying timers and other resources.
      * @returns {Promise<void>}
      */
@@ -110,7 +63,7 @@ class SeqLogger {
 
         this._closed = true;
         this._clearTimer();
-        return this.flush().then(() => {});
+        return this.flush();
     }
 
     /**
@@ -283,7 +236,7 @@ class SeqLogger {
 
     _httpOrNetworkError (res) {
         const networkErrors = ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN', 'EBUSY'];
-        return networkErrors.includes(res) || 500 <= res.statusCode && res.statusCode < 600;
+        return networkErrors.includes(res) || 500 <= res.status && res.status < 600;
     }
 
     _post (batch, bytes) {
@@ -317,16 +270,13 @@ class SeqLogger {
                     clearTimeout(timerId);
                     let httpErr = null;
                     if (res.status !== 200 && res.status !== 201) {
-                        httpErr = 'HTTP log shipping failed: ' + res.statusCode;
-                    }
-                    if (httpErr !== null) {
+                        httpErr = 'HTTP log shipping failed: ' + res.status;
                         if (this._httpOrNetworkError(res) && attempts < this._maxRetries) {
                             return setTimeout(() => sendRequest(batch, bytes), this._retryDelay);
                         }
                         return reject(httpErr);
-                    } else {
-                        return resolve(true);
                     }
+                    return resolve(true);
                   })
                   .catch((err) => {
                     clearTimeout(timerId);
@@ -336,23 +286,6 @@ class SeqLogger {
 
             return sendRequest(batch, bytes);
         });
-    }
-
-    _prepForBeacon (dequeued) {
-        const { batch, bytes } = dequeued;
-
-        const dataParts = [HEADER, batch.join(','), FOOTER];
-
-        // CORS-safelisted for the Content-Type request header
-        const options = { type: 'text/plain' };
-        const endpointWithKey = Object.assign({}, new URL(this._endpoint), { query: { 'apiKey': this._apiKey } });
-
-        return {
-            dataParts,
-            options,
-            beaconUrl: url.format(endpointWithKey),
-            size: bytes,
-        };
     }
 }
 
