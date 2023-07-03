@@ -6,9 +6,15 @@
     "seq",
     "logging"
   ],
-  "main": "index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    "node": "./lib/node",
+    "browser": "./lib/browser",
+    "default": "./lib/browser"
+  },
   "scripts": {
     "test": "mocha",
+    "build": "rm -rf ./lib && rollup --config ./rollup.config.js",
     "coverage": "nyc --reporter=text mocha",
     "start": "node ./example/example.js",
     "typecheck": "tsc --noEmit"
@@ -21,8 +27,11 @@
     "url": "https://github.com/datalust/seq-logging.git"
   },
   "devDependencies": {
+    "@rollup/plugin-replace": "^5.0.2",
     "mocha": "^9.2.2",
     "nyc": "^15.1.0",
+    "rollup": "^3.25.3",
+    "rollup-plugin-multi-input": "^1.4.1",
     "simple-mock": "^0.8.0",
     "superagent": "^6.1.0",
     "typescript": "^4.7.4",
