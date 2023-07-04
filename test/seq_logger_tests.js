@@ -2,7 +2,7 @@
 
 let assert = require('assert');
 const http = require("http");
-let SeqLogger = require('../seq_logger');
+let SeqLogger = require('../index').Logger;
 
 describe('SeqLogger', () => {
     

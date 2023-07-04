@@ -3,7 +3,7 @@
 let assert = require('assert');
 let uuid = require('uuid');
 let request = require('superagent');
-let SeqLogger = require('../seq_logger');
+let SeqLogger = require('../index').Logger;
 
 // TEST CONFIGURATION
 const serverUrlHttp = '[CONFIGURE_URL_HERE]';
