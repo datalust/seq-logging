@@ -41,8 +41,6 @@ module.exports = function (safeGlobalBlob, safeGlobalFetch) {
             this._timer = null;
             this._closed = false;
             this._activeShipper = null;
-            this._onRemoteConfigChange = cfg.onRemoteConfigChange || null;
-            this._lastRemoteConfig = null;
         }
 
         /**
