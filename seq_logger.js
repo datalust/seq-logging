@@ -1,7 +1,10 @@
 "use strict";
 
-const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
-const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
+
+
+module.exports = function (SafeGlobalBlob, safeGlobalFetch) {
+//     const SafeGlobalBlob = typeof Blob !== 'undefined' ? Blob : require('buffer').Blob;
+// const safeGlobalFetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
 const SafeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
 
 const HEADER = '{"Events":[';
@@ -289,8 +292,9 @@ class SeqLogger {
     }
 }
 
-module.exports = SeqLogger;
 
+    return SeqLogger;
+};
 
 const isValue = (obj) => {
     if (!obj) return true;
