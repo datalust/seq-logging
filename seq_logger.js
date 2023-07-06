@@ -1,8 +1,6 @@
 "use strict";
 
-module.exports = function (safeGlobalBlob, safeGlobalFetch) {
-    const safeGlobalAbortController = typeof AbortController !== 'undefined' ? AbortController : require('abort-controller');
-
+module.exports = function (safeGlobalBlob, safeGlobalFetch, safeGlobalAbortController) {
     const HEADER = '{"Events":[';
     const FOOTER = "]}";
     const HEADER_FOOTER_BYTES = (new safeGlobalBlob([HEADER])).size + (new safeGlobalBlob([FOOTER])).size;
