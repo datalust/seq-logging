@@ -34,5 +34,13 @@
   "dependencies": {
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.9"
-  }
+  },
+  "files": [
+    "./index.js",
+    "./browser.js",
+    "./seq_logger.js",
+    "./index.d.ts",
+    "./README.md",
+    "./LICENSE"
+  ]
 }
