@@ -42,5 +42,6 @@
     "./index.d.ts",
     "./README.md",
     "./LICENSE"
-  ]
+  ],
+  "types": "./index.d.ts"
 }
