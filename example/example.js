@@ -1,7 +1,7 @@
 "use strict";
 
 let process = require('process');
-let SeqLogger = require('../seq_logger');
+let SeqLogger = require('../index').Logger;
 
 let seq = new SeqLogger({ serverUrl: 'http://localhost:5341' });
 var n = 0;

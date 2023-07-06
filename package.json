@@ -1,6 +1,6 @@
 {
   "name": "seq-logging",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
   "keywords": [
     "seq",
@@ -13,8 +13,8 @@
     "start": "node ./example/example.js",
     "typecheck": "tsc --noEmit"
   },
-  "engines" : { 
-    "node" : ">=14.18"
+  "engines": {
+    "node": ">=14.18"
   },
   "author": "Datalust and contributors",
   "license": "Apache-2.0",
@@ -24,7 +24,7 @@
     "url": "https://github.com/datalust/seq-logging.git"
   },
   "devDependencies": {
-    "mocha": "^9.2.2",
+    "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "simple-mock": "^0.8.0",
     "superagent": "^6.1.0",
@@ -34,5 +34,14 @@
   "dependencies": {
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.9"
-  }
+  },
+  "files": [
+    "./index.js",
+    "./browser.js",
+    "./seq_logger.js",
+    "./index.d.ts",
+    "./README.md",
+    "./LICENSE"
+  ],
+  "types": "./index.d.ts"
 }
