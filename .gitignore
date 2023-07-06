@@ -34,3 +34,4 @@ node_modules
 *.orig
 
 .nyc_output
+.idea/
