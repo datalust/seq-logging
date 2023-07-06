@@ -2,7 +2,7 @@
 Create a logger that can write events to Seq.
 */
 
-import seq from 'seq-logging';
+import seq from 'seq-logging/browser';
 import status from './status';
 
 export default (messageTemplate) => {
