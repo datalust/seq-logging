@@ -9,7 +9,7 @@
     "test:html": "npm run build; npx concurrently --s first -k \"npm run serve\" \"npm run cypress\""
   },
   "dependencies": {
-    "seq-logging": "../../"
+    "seq-logging": "file:../../"
   },
   "devDependencies": {
     "@cypress/webpack-dev-server": "^1.3",

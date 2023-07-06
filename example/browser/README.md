@@ -13,3 +13,9 @@ npm run serve
 ```
 
 and open a browser window to `localhost:8080` (or whatever port webpack uses). The script will connect to a Seq instance at `localhost:5341` and use the very fancy button to log an event. It will also listen for incoming events from the server and log them to the dev tools console.
+
+```
+npm run cypress
+```
+
+Runs the cypress tests. Fails if the Seq server has user authentication enabled. 

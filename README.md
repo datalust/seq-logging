@@ -2,6 +2,20 @@
 
 > This library makes it easy to support Seq from Node.js logging libraries, including [Winston](https://github.com/winstonjs/winston) via [winston-seq](https://github.com/datalust/winston-seq), [Pino](https://github.com/pinojs/pino) via [`pino-seq`](https://github.com/datalust/pino-seq), [Bunyan](https://github.com/trentm/node-bunyan) via [`bunyan-seq`](https://github.com/continuousit/bunyan-seq), and [Ts.ED logger](https://logger.tsed.io) via [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html). It is not expected that applications will interact directly with this package.
 
+### Requiring for Node
+
+```js
+let seq = require('seq-logging');
+```
+
+### Requiring for a browser
+
+Using `seq-logging` in a browser context is the same, except the module to import is `seq-logging/browser`.
+
+```js
+let seq = require('seq-logging/browser');
+```
+
 ### Usage
 
 A `Logger` is configured with `serverUrl`, and optionally `apiKey` as well as event and batch size limits.
@@ -29,8 +43,6 @@ logger.close();
 Events are sent using the `emit()` method, that internally performs asynchronous batching based on payload size.
 
 When the application exits, `close()` ensures all buffered events are written. This can be done at any time otherwise using the `flush()` method. Both of these methods return promises indicating completion.
-
-When logging from a browser, and the application is being navigated away or closed, a `pagehide` or `unload` event listener has limited options and asynchronous methods will usually not succeed.  In that case, the application can call `flushToBeacon()` to queue all remaining buffered events into [`navigator.sendBeacon()`](https://developer.mozilla.org/docs/Web/API/Navigator/sendBeacon).  There is a size limit imposed by browsers so this is a best-effort attempt.
 
 ### Implementations
 
