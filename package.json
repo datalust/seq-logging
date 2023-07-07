@@ -1,6 +1,6 @@
 {
   "name": "seq-logging",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
   "keywords": [
     "seq",
@@ -35,13 +35,5 @@
     "abort-controller": "^3.0.0",
     "node-fetch": "^2.6.9"
   },
-  "files": [
-    "./index.js",
-    "./browser.js",
-    "./seq_logger.js",
-    "./index.d.ts",
-    "./README.md",
-    "./LICENSE"
-  ],
   "types": "./index.d.ts"
 }

@@ -48,5 +48,5 @@ When the application exits, `close()` ensures all buffered events are written. T
 
  * [bunyan-seq](https://github.com/datalust/bunyan-seq) - collect events from the Buyan logging framework
  * [pino-seq](https://github.com/datalust/pino-seq) - A stream to send Pino events to Seq
- * [winston-seq](https://github.com/SuperPaintman/winston-seq) - A Seq transport for Winston
+ * [winston-seq](https://github.com/datalust/winston-seq) - A Seq transport for Winston
  * [@tsed/logger-seq](https://logger.tsed.io/appenders/seq.html) - A Seq transport for Ts.ED logger
