@@ -5,7 +5,7 @@
 ### Requiring for Node
 
 ```js
-let seq = require('seq-logging');
+const seq = require('seq-logging');
 ```
 
 ### Requiring for a browser
@@ -13,7 +13,7 @@ let seq = require('seq-logging');
 Using `seq-logging` in a browser context is the same, except the module to import is `seq-logging/browser`.
 
 ```js
-let seq = require('seq-logging/browser');
+const seq = require('seq-logging/browser');
 ```
 
 ### Usage
@@ -22,10 +22,10 @@ A `Logger` is configured with `serverUrl`, and optionally `apiKey` as well as ev
 `requestTimeout` can be used to adjust timeout for stalled connections, default: 30s.
 
 ```js
-let process = require('process');
-let seq = require('seq-logging');
+const process = require('process');
+const seq = require('seq-logging');
 
-let logger = new seq.Logger({ serverUrl: 'http://localhost:5341' });
+const logger = new seq.Logger({ serverUrl: 'http://localhost:5341' });
 
 logger.emit({
     timestamp: new Date(),
