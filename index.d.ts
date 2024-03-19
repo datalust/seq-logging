@@ -20,6 +20,8 @@ export interface RemoteConfig {
 export interface SeqEvent {
   timestamp: Date
   level?: string
+  traceId?: string
+  spanId?: string
   messageTemplate?: string
   properties?: object
   exception?: string
