@@ -117,8 +117,8 @@ module.exports = function (safeGlobalBlob, safeGlobalFetch, safeGlobalAbortContr
             return {
                 Timestamp: timestamp,
                 Level: level,
-                TraceId: event.traceId,
-                SpanId: event.spanId,
+                TraceId: event.traceId?.toString(),
+                SpanId: event.spanId?.toString(),
                 MessageTemplate: messageTemplate,
                 Exception: exception,
                 Properties: properties
