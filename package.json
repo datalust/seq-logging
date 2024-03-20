@@ -1,6 +1,6 @@
 {
   "name": "seq-logging",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
   "keywords": [
     "seq",
@@ -9,7 +9,6 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "coverage": "nyc --reporter=text mocha",
     "start": "node ./example/example.js",
     "typecheck": "tsc --noEmit"
   },
@@ -25,15 +24,13 @@
   },
   "devDependencies": {
     "mocha": "^10.2.0",
-    "nyc": "^15.1.0",
-    "simple-mock": "^0.8.0",
-    "superagent": "^6.1.0",
-    "typescript": "^4.7.4",
-    "uuid": "^8.3.2"
+    "superagent": "^8.1.2",
+    "typescript": "^5.3.3",
+    "uuid": "^9.0.1"
   },
   "dependencies": {
     "abort-controller": "^3.0.0",
-    "node-fetch": "^2.6.9"
+    "node-fetch": "^2.7.0"
   },
   "types": "./index.d.ts"
 }

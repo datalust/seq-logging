@@ -10,7 +10,7 @@ const serverUrlHttp = '[CONFIGURE_URL_HERE]';
 const serverUrlHttps = '[CONFIGURE_URL_HERE]';
 const storeGracePeriodInMs = 1000;
 // required if authentication is turned on 
-const apiKeyWithUserLevelPermissions = null; 
+const apiKeyWithUserLevelPermissions = null;
 
 describe('SeqLogger', () => {
 
@@ -47,7 +47,7 @@ function testEmitAndVerifyStored(url, apiKey, done) {
     logger.emit(event);
 
     setTimeout(() => {
-        verifyMarkerStored(event.properties.testMarker, url, apiKey, done);
+        verifyMarkerStored(event.properties.testMarker, event.traceId, event.spanId, url, apiKey, done);
     }, storeGracePeriodInMs);
 }
 
@@ -55,13 +55,15 @@ function makeTestEvent() {
     return {
         level: 'Error',
         timestamp: new Date(),
+        traceId: '6112be4ab9f113c499dbf4817e503a69',
+        spanId: '2f2b39a596fc76cd',
         messageTemplate: 'Event produced by integration test',
         exception: 'Some error at some file on some line',
         properties: { testMarker: uuid.v4() }
     };
 }
 
-function verifyMarkerStored(testMarker, url, apiKey, callback) {
+function verifyMarkerStored(testMarker, traceId, spanId, url, apiKey, callback) {
 
     request.get(url + '/api/events')
         .query({count: 1, filter: 'Equal(testMarker, @"' + testMarker + '")'})
@@ -71,11 +73,14 @@ function verifyMarkerStored(testMarker, url, apiKey, callback) {
                 callback(err);
                 return;
             }
-            
+  
             if(res.body instanceof Array 
                 && res.body.length === 1
                 && res.body[0].Properties
-                && res.body[0].Properties.some(item => item.Name === "testMarker" && item.Value === testMarker)) {
+                && res.body[0].Properties.some(item => item.Name === "testMarker" && item.Value === testMarker)
+                && res.body[0].TraceId === traceId
+                && res.body[0].SpanId === spanId
+            ) {
                     callback();
                     return;
             }
