@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "mocha": "^10.2.0",
-    "superagent": "^8.1.2",
+    "superagent": "^10.2.0",
     "typescript": "^5.3.3",
     "uuid": "^9.0.1"
   },
