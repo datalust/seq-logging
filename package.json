@@ -1,6 +1,6 @@
 {
   "name": "seq-logging",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "Sends structured log events to the Seq HTTP ingestion API",
   "keywords": [
     "seq",
