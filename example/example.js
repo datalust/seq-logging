@@ -1,12 +1,12 @@
 "use strict";
 
-let process = require('process');
-let SeqLogger = require('../index').Logger;
+import process from 'process';
+import { Logger as SeqLogger } from '../index.js';
 
-let seq = new SeqLogger({ serverUrl: 'http://localhost:5341' });
+const seq = new SeqLogger({ serverUrl: 'http://localhost:5341' });
 var n = 0;
 
-let interval = setInterval(sayHello, 100);
+const interval = setInterval(sayHello, 100);
 
 function sayHello() {
     n = n + 1;
@@ -31,4 +31,3 @@ function sayHello() {
         seq.close();
     }
 }
-
