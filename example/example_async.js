@@ -1,9 +1,9 @@
 "use strict";
 
-let process = require('process');
-let SeqLogger = require('../index').Logger;
+import process from 'process';
+import { Logger as SeqLogger } from '../index.js';
 
-let seq = new SeqLogger({ serverUrl: 'http://localhost:5341', onRemoteConfigChange: (config) => {
+const seq = new SeqLogger({ serverUrl: 'http://localhost:5341', onRemoteConfigChange: (config) => {
     console.log(config);
 }});
 
@@ -30,4 +30,3 @@ async function sayHello(times) {
         }
     }
 }
-

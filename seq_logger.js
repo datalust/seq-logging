@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function (safeGlobalBlob, safeGlobalFetch, safeGlobalAbortController) {
+const DefineLogger = function (safeGlobalBlob, safeGlobalFetch, safeGlobalAbortController) {
     const HEADER = '{"Events":[';
     const FOOTER = "]}";
     const HEADER_FOOTER_BYTES = (new safeGlobalBlob([HEADER])).size + (new safeGlobalBlob([FOOTER])).size;
@@ -328,3 +328,5 @@ const removeCirculars = (obj, branch = new Map(), path = "root") => {
     });
     return replaced;
 };
+
+export { DefineLogger };
