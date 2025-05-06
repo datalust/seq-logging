@@ -1,5 +1,5 @@
 "use strict";
 
-let Logger = require('./seq_logger')(Blob, fetch, typeof AbortController !== 'undefined' ? AbortController : require('abort-controller'));
+const Logger = (await import('./seq_logger')).DefineLogger(Blob, fetch, typeof AbortController !== 'undefined' ? AbortController : await import('abort-controller'));
 
-module.exports = {Logger};
+export { Logger };

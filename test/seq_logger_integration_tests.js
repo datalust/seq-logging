@@ -1,9 +1,9 @@
 "use strict";
 
-let assert = require('assert');
-let uuid = require('uuid');
-let request = require('superagent');
-let SeqLogger = require('../index').Logger;
+import assert from 'assert';
+import * as uuid from 'uuid';
+import request from 'superagent';
+import { Logger as SeqLogger } from '../index.js';
 
 // TEST CONFIGURATION
 const serverUrlHttp = '[CONFIGURE_URL_HERE]';

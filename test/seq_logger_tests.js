@@ -1,8 +1,8 @@
 "use strict";
 
-let assert = require('assert');
-const http = require("http");
-let SeqLogger = require('../index').Logger;
+import assert from 'assert';
+import http from 'http';
+import { Logger as SeqLogger } from '../index.js';
 
 describe('SeqLogger', () => {
     

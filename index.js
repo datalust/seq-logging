@@ -1,9 +1,9 @@
 "use strict";
 
-let Logger = require('./seq_logger')(
-    typeof Blob !== 'undefined' ? Blob : require('buffer').Blob,
-    typeof fetch !== 'undefined' ? fetch : require('node-fetch'),
-    typeof AbortController !== 'undefined' ? AbortController : require('abort-controller')
+const Logger = (await import('./seq_logger.js')).DefineLogger(
+    typeof Blob !== 'undefined' ? Blob : (await import('buffer')).Blob,
+    typeof fetch !== 'undefined' ? fetch : await import('node-fetch'),
+    typeof AbortController !== 'undefined' ? AbortController : await import('abort-controller')
 );
 
-module.exports = {Logger};
+export { Logger };
