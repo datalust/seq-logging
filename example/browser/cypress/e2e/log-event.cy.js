@@ -6,8 +6,7 @@ context('The app', () => {
     it('logs to Seq', () => {
         cy.get('#log-event').click();
 
-        // This appears to be flaky on slower runners.
-        // cy.get('#status').should('have.text', 'Logging an event...');
+        cy.get('#status').should('have.text', 'Logging an event...');
 
         // After a little while...
 
