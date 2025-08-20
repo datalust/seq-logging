@@ -15,6 +15,6 @@ jobs:
       with:
         node-version: 22.x
     - run: npm install && cd example/browser && npm install
-    - run: docker run --name seq -d -p 5341:80 -e ACCEPT_EULA=Y datalust/seq:latest
+    - run: docker run --name seq -d -p 5341:80 -e ACCEPT_EULA=Y -e SEQ_FIRSTRUN_NOAUTHENTICATION=true datalust/seq:latest
     - run: cd example/browser && npm run test:html
     - run: docker rm -f seq
