@@ -9,7 +9,7 @@ import status from './status';
 
 export default (messageTemplate) => {
     // Open a WebSocket connection to Seq
-    var incoming = new WebSocket('ws://localhost:5341/api/events/stream');
+    var incoming = new WebSocket('ws://localhost:5341/api/events/stream?clef');
 
     // When the socket receives incoming event data, look for our log event
     incoming.addEventListener('message', (msg) => {
