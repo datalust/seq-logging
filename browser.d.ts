@@ -34,7 +34,7 @@ declare module 'seq-logging/browser' {
     exception?: string;
   }
 
-  export class Logger {           // <- ikke 'export declare class'
+  export class Logger {
     constructor(config: SeqLoggerConfig);
     emit(event: SeqEvent): void;
     close(): Promise<void>;
